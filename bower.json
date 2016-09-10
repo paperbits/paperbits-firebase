@@ -1,0 +1,24 @@
+{
+    "name": "paperbits-firebase",
+    "homepage": "https://github.com/paperbits/paperbits-firebase",
+    "authors": [
+        "paperbits <operations@paperbits.io>"
+    ],
+    "description": "Firebase client library for PaperBits components.",
+    "main": [
+        "src/scripts/firebaseService.ts",
+        "src/scripts/firebaseFileStorage.ts",
+        "src/scripts/firebaseObjectStorage.ts",
+        "src/scripts/registrations.firebase.ts"
+    ],
+    "keywords": [
+        "paperbits",
+        "firebase"
+    ],
+    "license": "GPLv3",
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components"
+    ]
+}
