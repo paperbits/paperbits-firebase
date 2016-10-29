@@ -1,9 +1,17 @@
 {
-  "name": "paperbits-firebase",
-  "private": true,
+  "name": "@paperbits/firebase",
   "version": "0.1.0",
-  "description": "Vienna LLC",
+  "description": "Firebase client library for Paperbits components.",
   "license": "GPL-3.0",
+  "author": "Vienna LLC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paperbits/paperbits-firebase.git"
+  },
+  "keywords": [
+    "paperbits",
+    "firebase"
+  ],
   "devDependencies": {
     "bower": "^1.3.1",
     "firebase": "^3.2.0",
