@@ -1,6 +1,4 @@
 node_modules/
-bower_components/
-public/
-typings/globals/
-.idea/
+dist/
 .vscode/
+package-lock.json

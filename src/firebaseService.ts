@@ -1,91 +1,151 @@
-module Paperbits.Firebase {
-    import ISettingsProvider = Paperbits.Configuration.ISettingsProvider;
-    import IEventManager = Paperbits.IEventManager;
+import * as firebase from "firebase";
+import { ISettingsProvider } from '@paperbits/common/configuration/ISettingsProvider';
+import { User } from "@firebase/auth-types";
+import * as FirebaseApp from "@firebase/app-types";
+import * as FirebaseStorage from "@firebase/storage-types";
+import * as FirebaseDatabase from "@firebase/database-types";
 
-    export class FirebaseService {
-        private settingsProvider: ISettingsProvider;
-        private eventManager: IEventManager;
-        private tenantRootKey: string;
-        private preparingPromise: Promise<any>;
 
-        constructor(settingsProvider: ISettingsProvider, eventManager: IEventManager) {
-            this.settingsProvider = settingsProvider;
-            this.eventManager = eventManager;
+export interface BasicFirebaseAuth {
+    email: string;
+    password: string;
+}
 
-            // rebinding...
-            this.onConfiurationLoaded = this.onConfiurationLoaded.bind(this);
+export interface GithubFirebaseAuth {
+    scopes: string[];
+}
+
+export interface GoogleFirebaseAuth {
+    scopes: string[];
+}
+
+export interface FirebaseAuth {
+    github: GithubFirebaseAuth;
+    google: GoogleFirebaseAuth;
+    basic: BasicFirebaseAuth;
+}
+
+export class FirebaseService {
+    private readonly settingsProvider: ISettingsProvider;
+
+    private tenantRootKey: string;
+    private preparingPromise: Promise<any>;
+    private authenticationPromise: Promise<any>;
+
+    public authenticatedUser: User;
+
+    constructor(settingsProvider: ISettingsProvider) {
+        this.settingsProvider = settingsProvider;
+    }
+
+    private async applyConfiguration(firebaseSettings: Object): Promise<any> {
+        //this.tenantRootKey = `tenants/${config.tenantId}`;
+        this.tenantRootKey = "tenants/default";
+
+        firebase.initializeApp(firebaseSettings); // This can be called only once
+    }
+
+    private async trySignIn(auth: FirebaseAuth): Promise<void> {
+        if (!auth) {
+            console.info("Firebase: Signing-in anonymously...");
+            await firebase.auth().signInAnonymously();
+            return;
         }
 
-        private onConfiurationLoaded(firebaseSettings: FirebaseConfig): Promise<any> {
-            //this.tenantRootKey = `tenants/${config.tenantId}`;
-            this.tenantRootKey = "tenants/default";
-            
-            firebase.initializeApp(firebaseSettings); // This can be called only once
+        if (auth.github) {
+            console.info("Firebase: Signing-in with Github...");
+            let provider = new firebase.auth.GithubAuthProvider();
 
-            var connectedRef = firebase.database().ref(".info/connected");
-
-            connectedRef.on("value", (snapshot) => {
-                if (snapshot.val() === true) {
-                    this.eventManager.dispatchEvent("onOnlineStatusChanged", "online");
-                }
-                else {
-                    this.eventManager.dispatchEvent("onOnlineStatusChanged", "offline");
-                }
-            });
-
-            return Promise.resolve();
-        }
-
-        public authenticate(): Promise<any> {
-            return firebase.auth().signInAnonymously().then((result) => {
-                console.info("Firebase: Authenticated anonymously.");
-            });
-
-            // TODO: Uncomment for Google Auth
-
-            // firebase.auth().getRedirectResult().then((result) => {
-            //     if (!result.credential) {
-            //         console.log(result);
-            //         var provider = new firebase.auth.GoogleAuthProvider();
-            //         firebase.auth().signInWithRedirect(provider);
-            //     }
-            //     console.info("Firebase: Authenticated with Google.");
-            // });
-        }
-
-        public getFirebaseRef(): Promise<any> {
-            if (this.preparingPromise) {
-                return this.preparingPromise
+            if (auth.github.scopes) {
+                auth.github.scopes.forEach(scope => {
+                    provider.addScope(scope);
+                })
             }
 
-            this.preparingPromise = new Promise((resolve, reject) => {
-                this.settingsProvider.getSetting("firebase")
-                    .then(this.onConfiurationLoaded)
-                    .then(this.authenticate)
-                    .then(() => {
-                        resolve(firebase);
-                    });
-            });
+            let redirectResult = await firebase.auth().getRedirectResult();
 
-            return this.preparingPromise;
+            if (!redirectResult.credential) {
+                await firebase.auth().signInWithRedirect(provider);
+                return;
+            }
+            return;
         }
 
-        public getDatabaseRef(): Promise<FirebaseDatabaseRef> {
-            return new Promise<FirebaseDatabaseRef>((resolve, reject) => {
-                this.getFirebaseRef().then((firebaseRef) => {
-                    let databaseRef = firebaseRef.database().ref(this.tenantRootKey);
-                    resolve(databaseRef);
-                });
-            });
+        if (auth.google) {
+            console.info("Firebase: Signing-in with Google...");
+            let provider = new firebase.auth.GoogleAuthProvider();
+
+            if (auth.google.scopes) {
+                auth.google.scopes.forEach(scope => {
+                    provider.addScope(scope);
+                })
+            }
+
+            let redirectResult = await firebase.auth().getRedirectResult();
+
+            if (!redirectResult.credential) {
+                await firebase.auth().signInWithRedirect(provider);
+                return;
+            }
+            return;
         }
 
-        public getStorageRef(): Promise<FirebaseStorageRef> {
-            return new Promise<FirebaseStorageRef>((resolve, reject) => {
-                this.getFirebaseRef().then((firebaseRef) => {
-                    let storageRef = firebaseRef.storage().ref(this.tenantRootKey);
-                    resolve(storageRef);
-                });
-            });
+        if (auth.basic) {
+            console.info("Firebase: Signing-in with email and password...");
+            await firebase.auth().signInWithEmailAndPassword(auth.basic.email, auth.basic.password);
+            return;
         }
+    }
+
+    private async authenticate(auth: FirebaseAuth): Promise<void> {
+        if (this.authenticationPromise) {
+            return this.authenticationPromise;
+        }
+
+        this.authenticationPromise = new Promise<void>((resolve) => {
+            firebase.auth().onAuthStateChanged(async (user: User) => {
+                if (user) {
+                    this.authenticatedUser = user;
+                    console.info(`Logged in as ${user.displayName || "anonymous"}.`);
+                    resolve();
+                    return;
+                }
+
+                await this.trySignIn(auth);
+                resolve();
+            });
+        });
+
+        return this.authenticationPromise;
+    }
+
+    public async getFirebaseRef(): Promise<FirebaseApp.FirebaseApp> {
+        if (this.preparingPromise) {
+            return this.preparingPromise
+        }
+
+        this.preparingPromise = new Promise(async (resolve, reject) => {
+            let firebaseSettings = await this.settingsProvider.getSetting("firebase");
+            await this.applyConfiguration(firebaseSettings);
+            await this.authenticate(firebaseSettings["auth"]);
+
+            resolve(firebase);
+        });
+
+        return this.preparingPromise;
+    }
+
+    public async getDatabaseRef(): Promise<FirebaseDatabase.Reference> {
+        let firebaseRef = await this.getFirebaseRef();
+        let databaseRef = await firebaseRef.database().ref(this.tenantRootKey);
+
+        return databaseRef;
+    }
+
+    public async getStorageRef(): Promise<FirebaseStorage.Reference> {
+        let firebaseRef = await this.getFirebaseRef();
+        let storageRef = firebaseRef.storage().ref(this.tenantRootKey);
+
+        return storageRef;
     }
 }

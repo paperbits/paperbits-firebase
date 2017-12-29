@@ -1,29 +1,28 @@
-var gulp = require("gulp");
-var bower = require("main-bower-files");
-var concat = require("gulp-concat");
-var uglify = require("gulp-uglify");
-var filter = require("gulp-filter");
-var typescript = require("typescript");
-var typescriptCompiler = require("gulp-typescript");
+const gulp = require("gulp");
+const typescript = require("typescript");
+const typescriptCompiler = require("gulp-typescript");
+const merge = require("merge2");
+const del = require("del");
+const runSeq = require("run-sequence").use(gulp);
 
-function handleErrors(error) {
-    console.log("ERROR:");
-    console.log(error.toString());
-    this.emit("end");
-}
+gulp.task("clean",() => {
+    return del(["dist/**"]);
+});
 
-gulp.task("default", function () {
-    var tsProject = typescriptCompiler.createProject("tsconfig.json", {
-        sortOutput: true,
-        typescript: typescript
+gulp.task("typescript", function () {
+    const typescriptProject = typescriptCompiler.createProject("tsconfig.json", {
+        typescript: typescript,
+        declaration: true
     });
 
-    var tsResult = tsProject
+    const tsResult = typescriptProject
         .src()
-        .pipe(typescriptCompiler(tsProject));
+        .pipe(typescriptProject())
 
-    return tsResult.js
-        .pipe(concat("paperbits-firebase.min.js"))
-        .pipe(uglify({ mangle: false }))
-        .pipe(gulp.dest("public"));
+    return merge([ // Merge the two output streams, so this task is finished when the IO of both operations is done. 
+        tsResult.dts.pipe(gulp.dest("./dist")),
+        tsResult.js.pipe(gulp.dest("./dist"))
+    ]);
 });
+
+gulp.task("default", (done) => runSeq("clean", "typescript", done));
