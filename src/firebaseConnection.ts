@@ -1,6 +1,5 @@
 import { IEventManager } from "@paperbits/common/events/IEventManager";
 import { FirebaseService } from './firebaseService';
-import { firebase } from "@firebase/app";
 
 export class FirebaseConnection {
     private readonly firebaseService: FirebaseService;

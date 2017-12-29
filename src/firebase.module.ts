@@ -1,7 +1,7 @@
+import { FirebaseObjectStorage } from "./firebaseObjectStorage";
+import { FirebaseBlobStorage } from "./firebaseBlobStorage";
 import { FirebaseService } from "./firebaseService";
 import { FirebaseUserService } from "./firebaseUserService";
-import { FirebaseBlobStorage } from "./firebaseBlobStorage";
-import { FirebaseObjectStorage } from "./firebaseObjectStorage";
 import { OfflineObjectStorage } from "@paperbits/common/persistence/offlineObjectStorage";
 import { IInjector, IInjectorModule } from "@paperbits/common/injection";
 import { IObjectStorage } from "@paperbits/common/persistence/IObjectStorage";

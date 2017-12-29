@@ -1,7 +1,6 @@
 import { IObjectStorage } from '@paperbits/common/persistence/IObjectStorage';
 import { FirebaseService } from './firebaseService';
 import * as _ from 'lodash';
-import { Query } from '@firebase/database-types';
 
 export class FirebaseObjectStorage implements IObjectStorage {
     private readonly firebaseService: FirebaseService;
@@ -65,7 +64,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
             if (propertyNames && propertyNames.length && searchValue) {
                 var searchPromises = propertyNames.map(async (propertyName) => {
-                    let query: Query = startAtSearch
+                    let query: firebase.database.Query = startAtSearch
                         ? pathRef.orderByChild(propertyName).startAt(searchValue)
                         : pathRef.orderByChild(propertyName).equalTo(searchValue);
 

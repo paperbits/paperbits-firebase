@@ -1,9 +1,5 @@
 import * as firebase from "firebase";
 import { ISettingsProvider } from '@paperbits/common/configuration/ISettingsProvider';
-import { User } from "@firebase/auth-types";
-import * as FirebaseApp from "@firebase/app-types";
-import * as FirebaseStorage from "@firebase/storage-types";
-import * as FirebaseDatabase from "@firebase/database-types";
 
 
 export interface BasicFirebaseAuth {
@@ -32,7 +28,7 @@ export class FirebaseService {
     private preparingPromise: Promise<any>;
     private authenticationPromise: Promise<any>;
 
-    public authenticatedUser: User;
+    public authenticatedUser: firebase.User;
 
     constructor(settingsProvider: ISettingsProvider) {
         this.settingsProvider = settingsProvider;
@@ -103,7 +99,7 @@ export class FirebaseService {
         }
 
         this.authenticationPromise = new Promise<void>((resolve) => {
-            firebase.auth().onAuthStateChanged(async (user: User) => {
+            firebase.auth().onAuthStateChanged(async (user: firebase.User) => {
                 if (user) {
                     this.authenticatedUser = user;
                     console.info(`Logged in as ${user.displayName || "anonymous"}.`);
@@ -119,7 +115,7 @@ export class FirebaseService {
         return this.authenticationPromise;
     }
 
-    public async getFirebaseRef(): Promise<FirebaseApp.FirebaseApp> {
+    public async getFirebaseRef(): Promise<firebase.app.App> {
         if (this.preparingPromise) {
             return this.preparingPromise
         }
@@ -135,14 +131,14 @@ export class FirebaseService {
         return this.preparingPromise;
     }
 
-    public async getDatabaseRef(): Promise<FirebaseDatabase.Reference> {
+    public async getDatabaseRef(): Promise<firebase.database.Reference> {
         let firebaseRef = await this.getFirebaseRef();
         let databaseRef = await firebaseRef.database().ref(this.tenantRootKey);
 
         return databaseRef;
     }
 
-    public async getStorageRef(): Promise<FirebaseStorage.Reference> {
+    public async getStorageRef(): Promise<firebase.storage.Reference> {
         let firebaseRef = await this.getFirebaseRef();
         let storageRef = firebaseRef.storage().ref(this.tenantRootKey);
 
