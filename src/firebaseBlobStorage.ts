@@ -1,4 +1,4 @@
-import { ProgressPromise } from '@paperbits/common/core/progressPromise';
+import { ProgressPromise } from '@paperbits/common/progressPromise';
 import { IBlobStorage } from '@paperbits/common/persistence/IBlobStorage';
 import { FirebaseService } from './firebaseService';
 
