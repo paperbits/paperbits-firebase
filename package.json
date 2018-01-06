@@ -21,7 +21,7 @@
     "gulp": "^3.9.1"
   },
   "dependencies": {
-    "@paperbits/common": "0.0.41",
+    "@paperbits/common": "0.0.42",
     "firebase": "4.4.0",
     "firebase-tools": "3.16.0"
   }
