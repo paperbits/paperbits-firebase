@@ -27,9 +27,9 @@ export class FirebaseBlobStorage implements IBlobStorage {
         });
     }
 
-    public async getDownloadUrl(filename: string): Promise<string> {
-        let storageRef = await this.firebaseService.getStorageRef();
-        let downloadUrl = await storageRef.child(filename).getDownloadURL();
+    public async getDownloadUrl(blobKey: string): Promise<string> {
+        const storageRef = await this.firebaseService.getStorageRef();
+        const downloadUrl = await storageRef.child(blobKey).getDownloadURL();
 
         return downloadUrl;
     }
