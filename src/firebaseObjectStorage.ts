@@ -11,7 +11,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
     public async addObject<T>(path: string, dataObject: T): Promise<void> {
         try {
-            let databaseRef = await this.firebaseService.getDatabaseRef();
+            const databaseRef = await this.firebaseService.getDatabaseRef();
 
             if (path) {
                 await databaseRef.child(path).set(dataObject)
