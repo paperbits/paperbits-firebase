@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-        "lib": [ "es2015" ],
         "target": "es5",
         "module": "commonjs",
         "moduleResolution": "node",
@@ -15,8 +14,7 @@
         "allowUnreachableCode": true,
         "listFiles": false,
         "inlineSourceMap": true,
-        "inlineSources": true,
-        "jsx": "react"
+        "inlineSources": true
     },
     "compileOnSave": false,
     "include": [
