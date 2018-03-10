@@ -16,10 +16,6 @@ export class FirebaseModule implements IInjectorModule {
 
     public register(injector: IInjector): void {
         
-        injector.bindSingleton("firebaseAdminService", FirebaseAdminService);
-        injector.bindSingleton("adminBlobStorage", FirebaseAdminBlobStorage);
-        injector.bindSingleton("adminObjectStorage", FirebaseAdminObjectStorage);
-        
         injector.bindSingleton("firebaseService", FirebaseService);
         injector.bindSingleton("userService", FirebaseUserService);
         injector.bindSingleton("blobStorage", FirebaseBlobStorage);
