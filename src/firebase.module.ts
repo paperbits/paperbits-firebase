@@ -5,6 +5,9 @@ import { FirebaseUserService } from "./firebaseUserService";
 import { OfflineObjectStorage } from "@paperbits/common/persistence/offlineObjectStorage";
 import { IInjector, IInjectorModule } from "@paperbits/common/injection";
 import { IObjectStorage } from "@paperbits/common/persistence/IObjectStorage";
+import { FirebaseAdminObjectStorage } from "./firebaseAdminObjectStorage";
+import { FirebaseAdminBlobStorage } from "./firebaseAdminBlobStorage";
+import { FirebaseAdminService } from "./firebaseAdminService";
 
 export class FirebaseModule implements IInjectorModule {
     constructor() {
@@ -12,6 +15,11 @@ export class FirebaseModule implements IInjectorModule {
     }
 
     public register(injector: IInjector): void {
+        
+        injector.bindSingleton("firebaseAdminService", FirebaseAdminService);
+        injector.bindSingleton("adminBlobStorage", FirebaseAdminBlobStorage);
+        injector.bindSingleton("adminObjectStorage", FirebaseAdminObjectStorage);
+        
         injector.bindSingleton("firebaseService", FirebaseService);
         injector.bindSingleton("userService", FirebaseUserService);
         injector.bindSingleton("blobStorage", FirebaseBlobStorage);

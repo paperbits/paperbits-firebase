@@ -23,6 +23,7 @@
     "dependencies": {
         "@paperbits/common": "0.0.61",
         "firebase": "4.4.0",
+        "firebase-admin": "^5.10.0",
         "firebase-tools": "3.16.0"
     }
 }
