@@ -12,7 +12,8 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "allowUnreachableCode": true,
-        "listFiles": false
+        "listFiles": false,
+        "lib": [ "es2015" ]
     },
     "include": [
         "src/**/*.ts"
