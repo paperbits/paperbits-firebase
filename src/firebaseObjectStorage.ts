@@ -1,6 +1,8 @@
+import * as _ from 'lodash';
+import * as Utils from "@paperbits/common/utils";
 import { IObjectStorage } from '@paperbits/common/persistence/IObjectStorage';
 import { FirebaseService } from './firebaseService';
-import * as _ from 'lodash';
+
 
 export class FirebaseObjectStorage implements IObjectStorage {
     private readonly firebaseService: FirebaseService;
@@ -27,8 +29,8 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
     public async getObject<T>(path: string): Promise<T> {
         try {
-            let databaseRef = await this.firebaseService.getDatabaseRef();
-            let snapshot = await databaseRef.child(path).once("value");
+            const databaseRef = await this.firebaseService.getDatabaseRef();
+            const snapshot = await databaseRef.child(path).once("value");
 
             return snapshot.val();
         }
@@ -39,7 +41,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
     public async deleteObject(path: string): Promise<void> {
         try {
-            let databaseRef = await this.firebaseService.getDatabaseRef();
+            const databaseRef = await this.firebaseService.getDatabaseRef();
             databaseRef.child(path).remove();
         }
         catch (error) {
@@ -49,7 +51,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
     public async updateObject<T>(path: string, dataObject: T): Promise<void> {
         try {
-            let databaseRef = await this.firebaseService.getDatabaseRef();
+            const databaseRef = await this.firebaseService.getDatabaseRef();
             return await databaseRef.child(path).update(dataObject);
         }
         catch (error) {
@@ -88,7 +90,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
     }
 
     private collectResult(objectData): Array<any> {
-        let result = [];
+        const result = [];
 
         if (objectData.hasChildren()) {
             let items = objectData.val();
@@ -104,4 +106,34 @@ export class FirebaseObjectStorage implements IObjectStorage {
         }
         return result;
     };
+
+    public async commitChanges(delta: Object): Promise<void> {
+        console.log("Saving changes...");
+
+        const saveTasks = [];
+        const keys = [];
+
+        Object.keys(delta).map(key => {
+            let firstLevelObject = delta[key];
+
+            Object.keys(firstLevelObject).forEach(subkey => {
+                keys.push(`${key}/${subkey}`);
+            });
+        })
+
+        keys.forEach(key => {
+            const changeObject = Utils.getObjectAt(key, delta);
+
+            Utils.cleanupObject(changeObject);
+
+            if (changeObject) {
+                saveTasks.push(this.updateObject(key, changeObject));
+            }
+            else {
+                saveTasks.push(this.deleteObject(key));
+            }
+        })
+
+        await Promise.all(saveTasks);
+    }
 }
