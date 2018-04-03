@@ -107,7 +107,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
         return result;
     };
 
-    public async commitChanges(delta: Object): Promise<void> {
+    public async saveChanges(delta: Object): Promise<void> {
         console.log("Saving changes...");
 
         const saveTasks = [];
