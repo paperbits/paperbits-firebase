@@ -34,9 +34,8 @@ export class FirebaseService {
         this.settingsProvider = settingsProvider;
     }
 
-    private async applyConfiguration(firebaseSettings: Object): Promise<any> {
-        //this.tenantRootKey = `tenants/${config.tenantId}`;
-        this.tenantRootKey = "tenants/default";
+    private async applyConfiguration(firebaseSettings: Object, tenantId: string): Promise<any> {
+        this.tenantRootKey = `tenants/${tenantId}`;
 
         firebase.initializeApp(firebaseSettings); // This can be called only once
     }
@@ -50,7 +49,7 @@ export class FirebaseService {
 
         if (auth.github) {
             console.info("Firebase: Signing-in with Github...");
-            let provider = new firebase.auth.GithubAuthProvider();
+            const provider = new firebase.auth.GithubAuthProvider();
 
             if (auth.github.scopes) {
                 auth.github.scopes.forEach(scope => {
@@ -58,7 +57,7 @@ export class FirebaseService {
                 })
             }
 
-            let redirectResult = await firebase.auth().getRedirectResult();
+            const redirectResult = await firebase.auth().getRedirectResult();
 
             if (!redirectResult.credential) {
                 await firebase.auth().signInWithRedirect(provider);
@@ -69,7 +68,7 @@ export class FirebaseService {
 
         if (auth.google) {
             console.info("Firebase: Signing-in with Google...");
-            let provider = new firebase.auth.GoogleAuthProvider();
+            const provider = new firebase.auth.GoogleAuthProvider();
 
             if (auth.google.scopes) {
                 auth.google.scopes.forEach(scope => {
@@ -77,7 +76,7 @@ export class FirebaseService {
                 })
             }
 
-            let redirectResult = await firebase.auth().getRedirectResult();
+            const redirectResult = await firebase.auth().getRedirectResult();
 
             if (!redirectResult.credential) {
                 await firebase.auth().signInWithRedirect(provider);
@@ -121,8 +120,10 @@ export class FirebaseService {
         }
 
         this.preparingPromise = new Promise(async (resolve, reject) => {
-            let firebaseSettings = await this.settingsProvider.getSetting("firebase");
-            await this.applyConfiguration(firebaseSettings);
+            const firebaseSettings = await this.settingsProvider.getSetting("firebase");
+            const firebaseTenantId = await this.settingsProvider.getSetting("tenantId");
+
+            await this.applyConfiguration(firebaseSettings, <string>firebaseTenantId);
             await this.authenticate(firebaseSettings["auth"]);
 
             resolve(firebase);
@@ -132,15 +133,15 @@ export class FirebaseService {
     }
 
     public async getDatabaseRef(): Promise<firebase.database.Reference> {
-        let firebaseRef = await this.getFirebaseRef();
-        let databaseRef = await firebaseRef.database().ref(this.tenantRootKey);
+        const firebaseRef = await this.getFirebaseRef();
+        const databaseRef = await firebaseRef.database().ref(this.tenantRootKey);
 
         return databaseRef;
     }
 
     public async getStorageRef(): Promise<firebase.storage.Reference> {
-        let firebaseRef = await this.getFirebaseRef();
-        let storageRef = firebaseRef.storage().ref(this.tenantRootKey);
+        const firebaseRef = await this.getFirebaseRef();
+        const storageRef = firebaseRef.storage().ref(this.tenantRootKey);
 
         return storageRef;
     }

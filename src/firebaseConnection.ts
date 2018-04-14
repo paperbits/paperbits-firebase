@@ -1,4 +1,4 @@
-import { IEventManager } from "@paperbits/common/events/IEventManager";
+import { IEventManager } from "@paperbits/common/events";
 import { FirebaseService } from './firebaseService';
 
 export class FirebaseConnection {
