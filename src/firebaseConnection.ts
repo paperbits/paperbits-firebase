@@ -1,6 +1,7 @@
 import { IEventManager } from "@paperbits/common/events";
 import { FirebaseService } from './firebaseService';
 
+
 export class FirebaseConnection {
     private readonly firebaseService: FirebaseService;
     private readonly eventManager: IEventManager;
@@ -9,7 +10,7 @@ export class FirebaseConnection {
         this.firebaseService = firebaseService;
         this.eventManager = eventManager;
 
-        var connectedRef = firebase.database().ref(".info/connected");
+        const connectedRef = firebase.database().ref(".info/connected");
 
         connectedRef.on("value", (snapshot) => {
             if (snapshot.val() === true) {

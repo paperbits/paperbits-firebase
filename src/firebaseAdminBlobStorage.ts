@@ -1,18 +1,19 @@
-import { ProgressPromise } from '@paperbits/common/progressPromise';
-import { IBlobStorage } from '@paperbits/common/persistence/IBlobStorage';
-import { IFirebaseAdminService } from './IFirebaseAdminService';
+import { ProgressPromise } from '@paperbits/common';
+import { IBlobStorage } from '@paperbits/common/persistence';
+import { FirebaseAdminService } from './firebaseAdminService';
+
 
 export class FirebaseAdminBlobStorage implements IBlobStorage {
-    private readonly firebaseAdminService: IFirebaseAdminService;
+    private readonly firebaseAdminService: FirebaseAdminService;
 
-    constructor(firebaseAdminService: IFirebaseAdminService) {
+    constructor(firebaseAdminService: FirebaseAdminService) {
         this.firebaseAdminService = firebaseAdminService;
     }
 
     public async uploadBlob(name: string, content: Uint8Array, contentType?:string): ProgressPromise<void> {
         return new ProgressPromise<void>(async (resolve, reject, progress) => {
-            let storageRef = await this.firebaseAdminService.getBucket();
-            let metaData = contentType ? {contentType: contentType} : null;
+            const storageRef = await this.firebaseAdminService.getBucket();
+            const metaData = contentType ? {contentType: contentType} : null;
             
             progress(0);
             await storageRef.file(name).save(new Buffer(content), {
@@ -32,7 +33,7 @@ export class FirebaseAdminBlobStorage implements IBlobStorage {
     }
 
     public async deleteBlob(filename: string): Promise<void> {
-        let storageRef = await this.firebaseAdminService.getBucket();
+        const storageRef = await this.firebaseAdminService.getBucket();
 
         await storageRef.file(filename).delete();
     }

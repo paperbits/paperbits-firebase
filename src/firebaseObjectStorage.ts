@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as Utils from "@paperbits/common/utils";
+import * as firebase from "firebase";
 import { IObjectStorage } from '@paperbits/common/persistence/IObjectStorage';
 import { FirebaseService } from './firebaseService';
 
@@ -61,26 +62,26 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
     public async searchObjects<T>(path: string, propertyNames?: Array<string>, searchValue?: string, startAtSearch?: boolean): Promise<Array<T>> {
         try {
-            let databaseRef = await this.firebaseService.getDatabaseRef();
-            let pathRef = databaseRef.child(path);
+            const databaseRef = await this.firebaseService.getDatabaseRef();
+            const pathRef = databaseRef.child(path);
 
             if (propertyNames && propertyNames.length && searchValue) {
                 var searchPromises = propertyNames.map(async (propertyName) => {
-                    let query: firebase.database.Query = startAtSearch
+                    const query: firebase.database.Query = startAtSearch
                         ? pathRef.orderByChild(propertyName).startAt(searchValue)
                         : pathRef.orderByChild(propertyName).equalTo(searchValue);
 
-                    let result = await query.once("value");
+                    const result = await query.once("value");
                     return this.collectResult(result);
                 });
 
-                let searchTaskResults = await Promise.all(searchPromises);
+                const searchTaskResults = await Promise.all(searchPromises);
                 return _.flatten(searchTaskResults);
             }
             else {
                 //return all objects
-                let objectData = await pathRef.once("value");
-                let result = this.collectResult(objectData);
+                const objectData = await pathRef.once("value");
+                const result = this.collectResult(objectData);
                 return result;
             }
         }
@@ -93,7 +94,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
         const result = [];
 
         if (objectData.hasChildren()) {
-            let items = objectData.val();
+            const items = objectData.val();
 
             if (items) {
                 if (Array.isArray(items)) {
@@ -114,7 +115,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
         const keys = [];
 
         Object.keys(delta).map(key => {
-            let firstLevelObject = delta[key];
+            const firstLevelObject = delta[key];
 
             Object.keys(firstLevelObject).forEach(subkey => {
                 keys.push(`${key}/${subkey}`);

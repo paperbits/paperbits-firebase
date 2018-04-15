@@ -1,5 +1,8 @@
 {
     "compilerOptions": {
+        "lib": [
+            "es2015"
+        ],
         "target": "es5",
         "module": "commonjs",
         "moduleResolution": "node",
@@ -13,8 +16,10 @@
         "emitDecoratorMetadata": true,
         "allowUnreachableCode": true,
         "listFiles": false,
-        "lib": [ "es2015" ]
+        "inlineSourceMap": true,
+        "inlineSources": true
     },
+    "compileOnSave": false,
     "include": [
         "src/**/*.ts"
     ],

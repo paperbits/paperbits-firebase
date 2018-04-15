@@ -1,6 +1,7 @@
 import { IUserService } from "@paperbits/common/user/IUserService";
 import { FirebaseService } from "./firebaseService";
 
+
 export class FirebaseUserService implements IUserService {
     constructor(private firebaseService: FirebaseService) {
     }

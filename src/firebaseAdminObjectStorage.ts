@@ -1,12 +1,12 @@
+import * as _ from 'lodash';
 import { IObjectStorage } from '@paperbits/common/persistence/IObjectStorage';
 import { FirebaseAdminService } from './firebaseAdminService';
-import * as _ from 'lodash';
-import { IFirebaseAdminService } from './IFirebaseAdminService';
+
 
 export class FirebaseAdminObjectStorage implements IObjectStorage {
-    private readonly firebaseAdminService: IFirebaseAdminService;
+    private readonly firebaseAdminService: FirebaseAdminService;
 
-    constructor(firebaseAdminService: IFirebaseAdminService) {
+    constructor(firebaseAdminService: FirebaseAdminService) {
         this.firebaseAdminService = firebaseAdminService;
     }
 
@@ -28,8 +28,8 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
 
     public async getObject<T>(path: string): Promise<T> {
         try {
-            let databaseRef = await this.firebaseAdminService.getDatabaseRef();
-            let snapshot = await databaseRef.child(path).once("value");
+            const databaseRef = await this.firebaseAdminService.getDatabaseRef();
+            const snapshot = await databaseRef.child(path).once("value");
 
             return snapshot.val();
         }
@@ -40,7 +40,7 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
 
     public async deleteObject(path: string): Promise<void> {
         try {
-            let databaseRef = await this.firebaseAdminService.getDatabaseRef();
+            const databaseRef = await this.firebaseAdminService.getDatabaseRef();
             databaseRef.child(path).remove();
         }
         catch (error) {
@@ -50,7 +50,7 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
 
     public async updateObject<T>(path: string, dataObject: T): Promise<void> {
         try {
-            let databaseRef = await this.firebaseAdminService.getDatabaseRef();
+            const databaseRef = await this.firebaseAdminService.getDatabaseRef();
             return await databaseRef.child(path).update(dataObject);
         }
         catch (error) {
@@ -60,26 +60,26 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
 
     public async searchObjects<T>(path: string, propertyNames?: Array<string>, searchValue?: string, startAtSearch?: boolean): Promise<Array<T>> {
         try {
-            let databaseRef = await this.firebaseAdminService.getDatabaseRef();
-            let pathRef = databaseRef.child(path);
+            const databaseRef = await this.firebaseAdminService.getDatabaseRef();
+            const pathRef = databaseRef.child(path);
 
             if (propertyNames && propertyNames.length && searchValue) {
                 var searchPromises = propertyNames.map(async (propertyName) => {
-                    let query = startAtSearch
+                    const query = startAtSearch
                         ? pathRef.orderByChild(propertyName).startAt(searchValue)
                         : pathRef.orderByChild(propertyName).equalTo(searchValue);
 
-                    let result = await query.once("value");
+                    const result = await query.once("value");
                     return this.collectResult(result);
                 });
 
-                let searchTaskResults = await Promise.all(searchPromises);
+                const searchTaskResults = await Promise.all(searchPromises);
                 return _.flatten(searchTaskResults);
             }
             else {
                 //return all objects
-                let objectData = await pathRef.once("value");
-                let result = this.collectResult(objectData);
+                const objectData = await pathRef.once("value");
+                const result = this.collectResult(objectData);
                 return result;
             }
         }
@@ -89,10 +89,10 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
     }
 
     private collectResult(objectData): Array<any> {
-        let result = [];
+        const result = [];
 
         if (objectData.hasChildren()) {
-            let items = objectData.val();
+            const items = objectData.val();
 
             if (items) {
                 if (Array.isArray(items)) {

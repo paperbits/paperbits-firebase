@@ -1,6 +1,7 @@
-import { ProgressPromise } from '@paperbits/common/progressPromise';
-import { IBlobStorage } from '@paperbits/common/persistence/IBlobStorage';
+import { ProgressPromise } from '@paperbits/common';
+import { IBlobStorage } from '@paperbits/common/persistence';
 import { FirebaseService } from './firebaseService';
+
 
 export class FirebaseBlobStorage implements IBlobStorage {
     private readonly firebaseService: FirebaseService;
@@ -11,9 +12,9 @@ export class FirebaseBlobStorage implements IBlobStorage {
 
     public uploadBlob(name: string, content: Uint8Array, contentType?:string): ProgressPromise<void> {
         return new ProgressPromise<void>(async (resolve, reject, progress) => {
-            let storageRef = await this.firebaseService.getStorageRef();
-            let metaData = contentType ? {contentType: contentType} : null;
-            let uploadTask = storageRef.child(name).put(content, metaData);
+            const storageRef = await this.firebaseService.getStorageRef();
+            const metaData = contentType ? {contentType: contentType} : null;
+            const uploadTask = storageRef.child(name).put(content, metaData);
 
             uploadTask.on("state_changed",
                 (snapshot: any) => {
@@ -35,7 +36,7 @@ export class FirebaseBlobStorage implements IBlobStorage {
     }
 
     public async deleteBlob(filename: string): Promise<void> {
-        let storageRef = await this.firebaseService.getStorageRef();
+        const storageRef = await this.firebaseService.getStorageRef();
 
         await storageRef.child(filename).delete();
     }

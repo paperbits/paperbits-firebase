@@ -101,7 +101,7 @@ export class FirebaseService {
             firebase.auth().onAuthStateChanged(async (user: firebase.User) => {
                 if (user) {
                     this.authenticatedUser = user;
-                    console.info(`Logged in as ${user.displayName || "anonymous"}.`);
+                    console.info(`Logged in as ${user.displayName || user.email || "anonymous"}.`);
                     resolve();
                     return;
                 }
@@ -123,7 +123,7 @@ export class FirebaseService {
             const firebaseSettings = await this.settingsProvider.getSetting("firebase");
             const firebaseTenantId = await this.settingsProvider.getSetting("tenantId");
 
-            await this.applyConfiguration(firebaseSettings, <string>firebaseTenantId);
+            await this.applyConfiguration(firebaseSettings, <string>firebaseTenantId || "default");
             await this.authenticate(firebaseSettings["auth"]);
 
             resolve(firebase);
