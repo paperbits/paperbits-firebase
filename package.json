@@ -12,14 +12,6 @@
         "paperbits",
         "firebase"
     ],
-    "devDependencies": {
-        "del": "^3.0.0",
-        "merge2": "^1.2.0",
-        "typescript": "2.5.3",
-        "gulp-typescript": "^3.2.2",
-        "run-sequence": "^2.2.0",
-        "gulp": "^3.9.1"
-    },
     "dependencies": {
         "@paperbits/common": "0.0.92",
         "firebase": "4.4.0",
