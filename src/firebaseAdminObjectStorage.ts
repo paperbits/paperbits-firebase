@@ -64,7 +64,7 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
             const pathRef = databaseRef.child(path);
 
             if (propertyNames && propertyNames.length && searchValue) {
-                var searchPromises = propertyNames.map(async (propertyName) => {
+                let searchPromises = propertyNames.map(async (propertyName) => {
                     const query = startAtSearch
                         ? pathRef.orderByChild(propertyName).startAt(searchValue)
                         : pathRef.orderByChild(propertyName).equalTo(searchValue);

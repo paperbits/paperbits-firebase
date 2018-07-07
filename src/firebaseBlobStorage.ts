@@ -1,6 +1,6 @@
-import { ProgressPromise } from '@paperbits/common';
-import { IBlobStorage } from '@paperbits/common/persistence';
-import { FirebaseService } from './firebaseService';
+import { ProgressPromise } from "@paperbits/common";
+import { IBlobStorage } from "@paperbits/common/persistence";
+import { FirebaseService } from "./firebaseService";
 
 
 export class FirebaseBlobStorage implements IBlobStorage {
@@ -10,10 +10,10 @@ export class FirebaseBlobStorage implements IBlobStorage {
         this.firebaseService = firebaseService;
     }
 
-    public uploadBlob(name: string, content: Uint8Array, contentType?:string): ProgressPromise<void> {
+    public uploadBlob(name: string, content: Uint8Array, contentType?: string): ProgressPromise<void> {
         return new ProgressPromise<void>(async (resolve, reject, progress) => {
             const storageRef = await this.firebaseService.getStorageRef();
-            const metaData = contentType ? {contentType: contentType} : null;
+            const metaData = contentType ? { contentType: contentType } : null;
             const uploadTask = storageRef.child(name).put(content, metaData);
 
             uploadTask.on("state_changed",
@@ -22,7 +22,7 @@ export class FirebaseBlobStorage implements IBlobStorage {
                 },
                 (error: Error) => {
                     console.error(error);
-                    reject()
+                    reject();
                 },
                 resolve);
         });
