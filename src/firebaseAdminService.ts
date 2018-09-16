@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import { ISettingsProvider } from '@paperbits/common/configuration/ISettingsProvider';
+import { ISettingsProvider } from "@paperbits/common/configuration";
 import { Bucket } from "@google-cloud/storage";
 
 
@@ -37,7 +37,7 @@ export class FirebaseAdminService {
     
     private async initFirebase(): Promise<admin.app.App> {
         if (this.initPromise) {
-            return this.initPromise
+            return this.initPromise;
         }
 
         this.initPromise = new Promise(async (resolve, reject) => {

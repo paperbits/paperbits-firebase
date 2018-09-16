@@ -1,5 +1,5 @@
 import * as firebase from "firebase";
-import { ISettingsProvider } from '@paperbits/common/configuration/ISettingsProvider';
+import { ISettingsProvider } from "@paperbits/common/configuration";
 
 
 export interface BasicFirebaseAuth {
@@ -54,7 +54,7 @@ export class FirebaseService {
             if (auth.github.scopes) {
                 auth.github.scopes.forEach(scope => {
                     provider.addScope(scope);
-                })
+                });
             }
 
             const redirectResult = await firebase.auth().getRedirectResult();
@@ -73,7 +73,7 @@ export class FirebaseService {
             if (auth.google.scopes) {
                 auth.google.scopes.forEach(scope => {
                     provider.addScope(scope);
-                })
+                });
             }
 
             const redirectResult = await firebase.auth().getRedirectResult();
@@ -116,7 +116,7 @@ export class FirebaseService {
 
     public async getFirebaseRef(): Promise<firebase.app.App> {
         if (this.preparingPromise) {
-            return this.preparingPromise
+            return this.preparingPromise;
         }
 
         this.preparingPromise = new Promise(async (resolve, reject) => {
