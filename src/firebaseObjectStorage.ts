@@ -1,8 +1,8 @@
-import * as _ from 'lodash';
+import * as _ from "lodash";
 import * as Utils from "@paperbits/common/utils";
 import * as firebase from "firebase";
-import { IObjectStorage } from '@paperbits/common/persistence/IObjectStorage';
-import { FirebaseService } from './firebaseService';
+import { IObjectStorage } from "@paperbits/common/persistence/IObjectStorage";
+import { FirebaseService } from "./firebaseService";
 
 
 export class FirebaseObjectStorage implements IObjectStorage {
@@ -17,14 +17,14 @@ export class FirebaseObjectStorage implements IObjectStorage {
             const databaseRef = await this.firebaseService.getDatabaseRef();
 
             if (path) {
-                await databaseRef.child(path).set(dataObject)
+                await databaseRef.child(path).set(dataObject);
             }
             else {
                 await databaseRef.update(dataObject);
             }
         }
         catch (error) {
-            throw `Could not add object '${path}'. Error: ${error}.`;
+            throw new Error(`Could not add object '${path}'. Error: ${error}.`);
         }
     }
 
@@ -36,7 +36,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             return snapshot.val();
         }
         catch (error) {
-            throw `Could not retrieve object '${path}'. Error: ${error}.`;
+            throw new Error(`Could not retrieve object '${path}'. Error: ${error}.`);
         }
     }
 
@@ -46,7 +46,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             databaseRef.child(path).remove();
         }
         catch (error) {
-            throw `Could not delete object '${path}'. Error: ${error}.`;
+            throw new Error(`Could not delete object '${path}'. Error: ${error}.`);
         }
     }
 
@@ -56,17 +56,17 @@ export class FirebaseObjectStorage implements IObjectStorage {
             return await databaseRef.child(path).update(dataObject);
         }
         catch (error) {
-            throw `Could not update object '${path}'. Error: ${error}`;
+            throw new Error(`Could not update object '${path}'. Error: ${error}`);
         }
     }
 
-    public async searchObjects<T>(path: string, propertyNames?: Array<string>, searchValue?: string, startAtSearch?: boolean): Promise<Array<T>> {
+    public async searchObjects<T>(path: string, propertyNames?: string[], searchValue?: string, startAtSearch?: boolean): Promise<T[]> {
         try {
             const databaseRef = await this.firebaseService.getDatabaseRef();
             const pathRef = databaseRef.child(path);
 
             if (propertyNames && propertyNames.length && searchValue) {
-                let searchPromises = propertyNames.map(async (propertyName) => {
+                const searchPromises = propertyNames.map(async (propertyName) => {
                     const query: firebase.database.Query = startAtSearch
                         ? pathRef.orderByChild(propertyName).startAt(searchValue)
                         : pathRef.orderByChild(propertyName).equalTo(searchValue);
@@ -79,18 +79,18 @@ export class FirebaseObjectStorage implements IObjectStorage {
                 return _.flatten(searchTaskResults);
             }
             else {
-                //return all objects
+                // return all objects
                 const objectData = await pathRef.once("value");
                 const result = this.collectResult(objectData);
                 return result;
             }
         }
         catch (error) {
-            throw `Could not search object '${path}'. Error: ${error}.`;
+            throw new Error(`Could not search object '${path}'. Error: ${error}.`);
         }
     }
 
-    private collectResult(objectData): Array<any> {
+    private collectResult(objectData): any[] {
         const result = [];
 
         if (objectData.hasChildren()) {
@@ -106,7 +106,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             }
         }
         return result;
-    };
+    }
 
     public async saveChanges(delta: Object): Promise<void> {
         console.log("Saving changes...");
@@ -120,7 +120,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             Object.keys(firstLevelObject).forEach(subkey => {
                 keys.push(`${key}/${subkey}`);
             });
-        })
+        });
 
         keys.forEach(key => {
             const changeObject = Utils.getObjectAt(key, delta);
@@ -133,7 +133,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             else {
                 saveTasks.push(this.deleteObject(key));
             }
-        })
+        });
 
         await Promise.all(saveTasks);
     }

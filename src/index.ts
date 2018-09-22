@@ -4,7 +4,6 @@ export * from "./firebaseAdminBlobStorage";
 export * from "./firebaseAdminObjectStorage";
 export * from "./firebaseAdminService";
 export * from "./firebaseBlobStorage";
-export * from "./firebaseConnection";
 export * from "./firebaseObjectStorage";
 export * from "./firebaseService";
 export * from "./firebaseUserService";

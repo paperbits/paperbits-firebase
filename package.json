@@ -16,6 +16,7 @@
         "@paperbits/common": "0.1.14",
         "firebase": "4.4.0",
         "firebase-admin": "^5.10.0",
-        "firebase-tools": "3.16.0"
+        "firebase-tools": "3.16.0",
+        "lodash": "^4.17.11"
     }
 }

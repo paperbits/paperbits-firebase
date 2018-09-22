@@ -1,4 +1,5 @@
 import * as firebase from "firebase";
+
 import { ISettingsProvider } from "@paperbits/common/configuration";
 
 
@@ -36,7 +37,6 @@ export class FirebaseService {
 
     private async applyConfiguration(firebaseSettings: Object, tenantId: string): Promise<any> {
         this.tenantRootKey = `tenants/${tenantId}`;
-
         firebase.initializeApp(firebaseSettings); // This can be called only once
     }
 

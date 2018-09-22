@@ -1,24 +1,21 @@
 import * as admin from "firebase-admin";
 import { ISettingsProvider } from "@paperbits/common/configuration";
-import { Bucket } from "@google-cloud/storage";
 
 
 export class FirebaseAdminService {
-    private readonly settingsProvider: ISettingsProvider;
-
-    private tenantId: string;
     private tenantRoot: string;
     private initPromise: Promise<any>;
-    private authenticationPromise: Promise<any>;
 
-    constructor(settingsProvider: ISettingsProvider) {
-        this.settingsProvider = settingsProvider;
-    }
+    constructor(private readonly settingsProvider: ISettingsProvider) { }
 
-    private async applyConfiguration(tenantId: string, firebaseAdminAppOptions: admin.AppOptions, appName?: string): Promise<any> {
+    private async applyConfiguration(tenantId: string, firebaseSettings: Object): Promise<any> {
         this.tenantRoot = `tenants/${tenantId}`;
 
-        admin.initializeApp(firebaseAdminAppOptions, appName); // This can be called only once
+        admin.initializeApp({
+            credential: admin.credential.cert(firebaseSettings["auth"]["serviceAccount"]),
+            databaseURL: firebaseSettings["databaseURL"],
+            storageBucket: firebaseSettings["storageBucket"]
+        });
     }
 
     public async getDatabaseRef(): Promise<admin.database.Reference> {
@@ -28,22 +25,26 @@ export class FirebaseAdminService {
         return databaseRef;
     }
 
-    public async getBucket(): Promise<Bucket> {
+    public async getStorageRef(): Promise<any> {
         await this.initFirebase();
+
         const bucket = admin.storage().bucket();
 
         return bucket;
     }
-    
-    private async initFirebase(): Promise<admin.app.App> {
+
+    private async initFirebase(): Promise<void> {
         if (this.initPromise) {
             return this.initPromise;
         }
 
         this.initPromise = new Promise(async (resolve, reject) => {
-            const tenantId = <string> await this.settingsProvider.getSetting("tenantId");
+            const tenantId = <string>await this.settingsProvider.getSetting("tenantId");
             const firebaseSettings = await this.settingsProvider.getSetting("firebase");
+
             await this.applyConfiguration(tenantId, firebaseSettings);
+
+            resolve();
         });
 
         return this.initPromise;
