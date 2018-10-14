@@ -1,6 +1,6 @@
 {
     "name": "@paperbits/firebase",
-    "version": "0.1.15",
+    "version": "0.1.16",
     "description": "Firebase client library for Paperbits components.",
     "license": "MIT",
     "author": "Paperbits",
