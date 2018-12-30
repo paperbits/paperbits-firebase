@@ -60,7 +60,9 @@ export class FirebaseObjectStorage implements IObjectStorage {
         }
     }
 
-    public async searchObjects<T>(path: string, propertyNames?: string[], searchValue?: string, startAtSearch?: boolean): Promise<T[]> {
+    public async searchObjects<T>(path: string, propertyNames?: string[], searchValue?: string, startAtSearch?: boolean): Promise<T> {
+        const result: any = {};
+
         try {
             const databaseRef = await this.firebaseService.getDatabaseRef();
             const pathRef = databaseRef.child(path);
@@ -71,41 +73,29 @@ export class FirebaseObjectStorage implements IObjectStorage {
                         ? pathRef.orderByChild(propertyName).startAt(searchValue)
                         : pathRef.orderByChild(propertyName).equalTo(searchValue);
 
-                    const result = await query.once("value");
-                    return this.collectResult(result);
+                    const objectData = await query.once("value");
+                    return objectData.val();
                 });
 
                 const searchTaskResults = await Promise.all(searchPromises);
-                return _.flatten(searchTaskResults);
+
+                searchTaskResults.forEach(x => {
+                    Utils.mergeDeepAt(path, result, x);
+                });
+
+                return result;
             }
             else {
                 // return all objects
                 const objectData = await pathRef.once("value");
-                const result = this.collectResult(objectData);
+                Utils.mergeDeepAt(path, result, objectData.val());
+
                 return result;
             }
         }
         catch (error) {
             throw new Error(`Could not search object '${path}'. Error: ${error}.`);
         }
-    }
-
-    private collectResult(objectData): any[] {
-        const result = [];
-
-        if (objectData.hasChildren()) {
-            const items = objectData.val();
-
-            if (items) {
-                if (Array.isArray(items)) {
-                    items.map((item) => result.push(item));
-                }
-                else {
-                    _.map(items, (item) => result.push(item));
-                }
-            }
-        }
-        return result;
     }
 
     public async saveChanges(delta: Object): Promise<void> {
