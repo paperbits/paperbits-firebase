@@ -25,7 +25,7 @@ export interface FirebaseAuth {
 export class FirebaseService {
     private readonly settingsProvider: ISettingsProvider;
 
-    private tenantRootKey: string;
+    private rootKey: string;
     private preparingPromise: Promise<any>;
     private authenticationPromise: Promise<any>;
 
@@ -35,8 +35,7 @@ export class FirebaseService {
         this.settingsProvider = settingsProvider;
     }
 
-    private async applyConfiguration(firebaseSettings: Object, tenantId: string): Promise<any> {
-        this.tenantRootKey = `tenants/${tenantId}`;
+    private async applyConfiguration(firebaseSettings: Object): Promise<any> {
         firebase.initializeApp(firebaseSettings); // This can be called only once
     }
 
@@ -120,10 +119,10 @@ export class FirebaseService {
         }
 
         this.preparingPromise = new Promise(async (resolve, reject) => {
-            const firebaseSettings = await this.settingsProvider.getSetting("firebase");
-            const firebaseTenantId = await this.settingsProvider.getSetting("tenantId");
+            const firebaseSettings = await this.settingsProvider.getSetting<any>("firebase");
+            this.rootKey = firebaseSettings.rootKey || "/";
 
-            await this.applyConfiguration(firebaseSettings, <string>firebaseTenantId || "default");
+            await this.applyConfiguration(firebaseSettings);
             await this.authenticate(firebaseSettings["auth"]);
 
             resolve(firebase);
@@ -134,14 +133,14 @@ export class FirebaseService {
 
     public async getDatabaseRef(): Promise<firebase.database.Reference> {
         const firebaseRef = await this.getFirebaseRef();
-        const databaseRef = await firebaseRef.database().ref(this.tenantRootKey);
+        const databaseRef = await firebaseRef.database().ref(this.rootKey);
 
         return databaseRef;
     }
 
     public async getStorageRef(): Promise<firebase.storage.Reference> {
         const firebaseRef = await this.getFirebaseRef();
-        const storageRef = firebaseRef.storage().ref(this.tenantRootKey);
+        const storageRef = firebaseRef.storage().ref(this.rootKey);
 
         return storageRef;
     }
