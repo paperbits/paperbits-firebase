@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import * as Utils from "@paperbits/common/utils";
 import * as firebase from "firebase";
-import { IObjectStorage } from "@paperbits/common/persistence/IObjectStorage";
+import { IObjectStorage } from "@paperbits/common/persistence";
 import { FirebaseService } from "./firebaseService";
 
 
@@ -60,7 +60,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
         }
     }
 
-    public async searchObjects<T>(path: string, propertyNames?: string[], searchValue?: string, startAtSearch?: boolean): Promise<T> {
+    public async searchObjects<T>(path: string, propertyNames?: string[], searchValue?: string): Promise<T> {
         const result: any = {};
 
         try {
@@ -69,10 +69,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
             if (propertyNames && propertyNames.length && searchValue) {
                 const searchPromises = propertyNames.map(async (propertyName) => {
-                    const query: firebase.database.Query = startAtSearch
-                        ? pathRef.orderByChild(propertyName).startAt(searchValue)
-                        : pathRef.orderByChild(propertyName).equalTo(searchValue);
-
+                    const query = pathRef.orderByChild(propertyName).equalTo(searchValue);
                     const objectData = await query.once("value");
                     return objectData.val();
                 });
