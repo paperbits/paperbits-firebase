@@ -61,7 +61,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
     }
 
     public async searchObjects<T>(path: string, propertyNames?: string[], searchValue?: string): Promise<T> {
-        const result: any = {};
+        const searchResultObject: any = {};
 
         try {
             const databaseRef = await this.firebaseService.getDatabaseRef();
@@ -77,18 +77,18 @@ export class FirebaseObjectStorage implements IObjectStorage {
                 const searchTaskResults = await Promise.all(searchPromises);
 
                 searchTaskResults.forEach(x => {
-                    Utils.mergeDeepAt(path, result, x);
+                    Utils.mergeDeepAt(path, searchResultObject, x);
                 });
-
-                return result;
             }
             else {
                 // return all objects
                 const objectData = await pathRef.once("value");
-                Utils.mergeDeepAt(path, result, objectData.val());
-
-                return result;
+                Utils.mergeDeepAt(path, searchResultObject, objectData.val());
             }
+
+            const resultObject = Utils.getObjectAt(path, searchResultObject);
+
+            return <T>resultObject;
         }
         catch (error) {
             throw new Error(`Could not search object '${path}'. Error: ${error}.`);
