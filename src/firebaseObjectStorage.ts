@@ -88,7 +88,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
             const resultObject = Utils.getObjectAt(path, searchResultObject);
 
-            return <T>resultObject;
+            return <T>(resultObject || {});
         }
         catch (error) {
             throw new Error(`Could not search object '${path}'. Error: ${error}.`);
