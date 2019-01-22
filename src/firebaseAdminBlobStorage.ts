@@ -4,18 +4,15 @@ import { FirebaseAdminService } from "./firebaseAdminService";
 
 
 export class FirebaseAdminBlobStorage implements IBlobStorage {
-    private readonly firebaseAdminService: FirebaseAdminService;
-
-    constructor(firebaseAdminService: FirebaseAdminService) {
-        this.firebaseAdminService = firebaseAdminService;
-    }
+    constructor(private readonly firebaseService: FirebaseAdminService) { }
 
     public async uploadBlob(name: string, content: Uint8Array, contentType?: string): ProgressPromise<void> {
         return new ProgressPromise<void>(async (resolve, reject, progress) => {
-            const storageRef = await this.firebaseAdminService.getStorageRef();
-            const metaData = contentType ? {contentType: contentType} : null;
-            
+            const storageRef = await this.firebaseService.getStorageRef();
+            const metaData = contentType ? { contentType: contentType } : null;
+
             progress(0);
+            
             await storageRef.file(name).save(new Buffer(content), {
                 metadata: {
                     contentType: contentType
@@ -26,7 +23,7 @@ export class FirebaseAdminBlobStorage implements IBlobStorage {
     }
 
     public async getDownloadUrl(blobKey: string): Promise<string> {
-        const storageRef = await this.firebaseAdminService.getStorageRef();
+        const storageRef = await this.firebaseService.getStorageRef();
 
         debugger;
         const downloadUrl = await storageRef.file(blobKey).getSignedUrl();
@@ -35,7 +32,7 @@ export class FirebaseAdminBlobStorage implements IBlobStorage {
     }
 
     public async deleteBlob(filename: string): Promise<void> {
-        const storageRef = await this.firebaseAdminService.getStorageRef();
+        const storageRef = await this.firebaseService.getStorageRef();
 
         await storageRef.file(filename).delete();
     }
