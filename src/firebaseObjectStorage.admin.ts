@@ -1,18 +1,18 @@
 import * as _ from "lodash";
 import { IObjectStorage } from "@paperbits/common/persistence";
-import { FirebaseAdminService } from "./firebaseAdminService";
+import { FirebaseService } from "./firebaseService.admin";
 
 
-export class FirebaseAdminObjectStorage implements IObjectStorage {
-    private readonly firebaseAdminService: FirebaseAdminService;
+export class FirebaseObjectStorage implements IObjectStorage {
+    private readonly firebaseService: FirebaseService;
 
-    constructor(firebaseAdminService: FirebaseAdminService) {
-        this.firebaseAdminService = firebaseAdminService;
+    constructor(firebaseService: FirebaseService) {
+        this.firebaseService = firebaseService;
     }
 
     public async addObject<T>(path: string, dataObject: T): Promise<void> {
         try {
-            const databaseRef = await this.firebaseAdminService.getDatabaseRef();
+            const databaseRef = await this.firebaseService.getDatabaseRef();
 
             if (path) {
                 await databaseRef.child(path).set(dataObject);
@@ -28,7 +28,7 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
 
     public async getObject<T>(path: string): Promise<T> {
         try {
-            const databaseRef = await this.firebaseAdminService.getDatabaseRef();
+            const databaseRef = await this.firebaseService.getDatabaseRef();
             const snapshot = await databaseRef.child(path).once("value");
 
             return snapshot.val();
@@ -40,7 +40,7 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
 
     public async deleteObject(path: string): Promise<void> {
         try {
-            const databaseRef = await this.firebaseAdminService.getDatabaseRef();
+            const databaseRef = await this.firebaseService.getDatabaseRef();
             databaseRef.child(path).remove();
         }
         catch (error) {
@@ -50,7 +50,7 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
 
     public async updateObject<T>(path: string, dataObject: T): Promise<void> {
         try {
-            const databaseRef = await this.firebaseAdminService.getDatabaseRef();
+            const databaseRef = await this.firebaseService.getDatabaseRef();
             return await databaseRef.child(path).update(dataObject);
         }
         catch (error) {
@@ -60,7 +60,7 @@ export class FirebaseAdminObjectStorage implements IObjectStorage {
 
     public async searchObjects<T>(path: string, propertyNames?: string[], searchValue?: string, startAtSearch?: boolean): Promise<T[]> {
         try {
-            const databaseRef = await this.firebaseAdminService.getDatabaseRef();
+            const databaseRef = await this.firebaseService.getDatabaseRef();
             const pathRef = databaseRef.child(path);
 
             if (propertyNames && propertyNames.length && searchValue) {

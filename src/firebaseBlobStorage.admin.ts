@@ -1,10 +1,10 @@
 import { ProgressPromise } from "@paperbits/common";
 import { IBlobStorage } from "@paperbits/common/persistence";
-import { FirebaseAdminService } from "./firebaseAdminService";
+import { FirebaseService } from "./firebaseService.admin";
 
 
-export class FirebaseAdminBlobStorage implements IBlobStorage {
-    constructor(private readonly firebaseService: FirebaseAdminService) { }
+export class FirebaseBlobStorage implements IBlobStorage {
+    constructor(private readonly firebaseService: FirebaseService) { }
 
     public async uploadBlob(name: string, content: Uint8Array, contentType?: string): ProgressPromise<void> {
         return new ProgressPromise<void>(async (resolve, reject, progress) => {

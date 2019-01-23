@@ -26,7 +26,7 @@ export class FirebaseService {
     private readonly settingsProvider: ISettingsProvider;
 
     private rootKey: string;
-    private preparingPromise: Promise<any>;
+    private initializationPromise: Promise<any>;
     private authenticationPromise: Promise<any>;
 
     public authenticatedUser: firebase.User;
@@ -114,11 +114,11 @@ export class FirebaseService {
     }
 
     public async getFirebaseRef(): Promise<firebase.app.App> {
-        if (this.preparingPromise) {
-            return this.preparingPromise;
+        if (this.initializationPromise) {
+            return this.initializationPromise;
         }
 
-        this.preparingPromise = new Promise(async (resolve, reject) => {
+        this.initializationPromise = new Promise(async (resolve, reject) => {
             const firebaseSettings = await this.settingsProvider.getSetting<any>("firebase");
             this.rootKey = firebaseSettings.rootKey || "/";
 
@@ -128,7 +128,7 @@ export class FirebaseService {
             resolve(firebase);
         });
 
-        return this.preparingPromise;
+        return this.initializationPromise;
     }
 
     public async getDatabaseRef(): Promise<firebase.database.Reference> {
