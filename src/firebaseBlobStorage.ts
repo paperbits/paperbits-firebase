@@ -29,10 +29,22 @@ export class FirebaseBlobStorage implements IBlobStorage {
     }
 
     public async getDownloadUrl(blobKey: string): Promise<string> {
-        const storageRef = await this.firebaseService.getStorageRef();
-        const downloadUrl = await storageRef.child(blobKey).getDownloadURL();
+        if (!blobKey) {
+            throw new Error(`Parameter "blobKey" not specified.`);
+        }
 
-        return downloadUrl;
+        const storageRef = await this.firebaseService.getStorageRef();
+
+        try {
+            const downloadUrl = await storageRef.child(blobKey).getDownloadURL();
+            return downloadUrl;
+        }
+        catch (error) {
+            if (error && error.code_ === "storage/object-not-found") {
+                return null;
+            }
+            throw error;
+        }
     }
 
     public async deleteBlob(filename: string): Promise<void> {
