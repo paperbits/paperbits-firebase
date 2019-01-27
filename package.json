@@ -14,8 +14,8 @@
     ],
     "dependencies": {
         "@paperbits/common": "0.1.43",
-        "firebase": "4.4.0",
-        "firebase-admin": "^5.10.0",
+        "firebase": "^4.13.1",
+        "firebase-admin": "^6.5.1",
         "lodash": "^4.17.11"
     }
 }
