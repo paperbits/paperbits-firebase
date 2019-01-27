@@ -33,7 +33,7 @@ export class FirebaseBlobStorage implements IBlobStorage {
     public async getDownloadUrl(blobKey: string): Promise<string> {
         const storageRef = await this.firebaseService.getStorageRef();
         const file = storageRef.file("tenants/default/" + blobKey);
-        const downloadUrls = await file.getSignedUrl({ action: "read" });
+        const downloadUrls = await file.getSignedUrl({ action: "read", expires: "01-01-2100" });
 
         if (downloadUrls.length > 0) {
             return downloadUrls[0];
