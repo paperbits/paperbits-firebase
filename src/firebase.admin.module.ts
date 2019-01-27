@@ -4,11 +4,7 @@ import { FirebaseBlobStorage } from "./firebaseBlobStorage.admin";
 import { FirebaseService } from "./firebaseService.admin";
 
 
-export class FirebaseAdminModule implements IInjectorModule {
-    constructor() {
-        this.register = this.register.bind(this);
-    }
-
+export class FirebaseModule implements IInjectorModule {
     public register(injector: IInjector): void {
         injector.bindSingleton("firebaseService", FirebaseService);
         injector.bindSingleton("blobStorage", FirebaseBlobStorage);

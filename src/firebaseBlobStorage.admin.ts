@@ -12,7 +12,7 @@ export class FirebaseBlobStorage implements IBlobStorage {
             const metaData = contentType ? { contentType: contentType } : null;
 
             progress(0);
-            
+
             await storageRef.file(name).save(new Buffer(content), {
                 metadata: {
                     contentType: contentType
@@ -22,13 +22,24 @@ export class FirebaseBlobStorage implements IBlobStorage {
         });
     }
 
+    public async downloadBlob?(blobKey: string): Promise<Uint8Array> {
+        // TODO: Enable proper download
+        // const storageRef = await this.firebaseService.getStorageRef();
+        // const file = storageRef.file(blobKey);
+
+        return null;
+    }
+
     public async getDownloadUrl(blobKey: string): Promise<string> {
         const storageRef = await this.firebaseService.getStorageRef();
+        const file = storageRef.file("tenants/default/" + blobKey);
+        const downloadUrls = await file.getSignedUrl({ action: "read" });
 
-        debugger;
-        const downloadUrl = await storageRef.file(blobKey).getSignedUrl();
+        if (downloadUrls.length > 0) {
+            return downloadUrls[0];
+        }
 
-        return downloadUrl["0"];
+        return null;
     }
 
     public async deleteBlob(filename: string): Promise<void> {
