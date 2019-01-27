@@ -3,12 +3,16 @@ import { ISettingsProvider } from "@paperbits/common/configuration";
 
 
 export class FirebaseService {
-    private rootKey: string;
+    public rootKey: string;
+    public storageBasePath: string;
     private initializationPromise: Promise<any>;
 
     constructor(private readonly settingsProvider: ISettingsProvider) { }
 
     private async applyConfiguration(firebaseSettings: Object): Promise<any> {
+        this.rootKey = firebaseSettings["rootKey"];
+        this.storageBasePath = firebaseSettings["storageBasePath"];
+
         admin.initializeApp({
             credential: admin.credential.cert(firebaseSettings["auth"]["serviceAccount"]),
             databaseURL: firebaseSettings["databaseURL"],
