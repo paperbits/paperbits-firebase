@@ -1,7 +1,8 @@
-import * as firebase from "firebase";
-
+import * as firebase from "firebase/app";
+import "firebase/firebase-auth";
+import "firebase/firebase-database";
+import "firebase/firebase-storage";
 import { ISettingsProvider } from "@paperbits/common/configuration";
-
 
 export interface BasicFirebaseAuth {
     email: string;
