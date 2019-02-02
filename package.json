@@ -1,6 +1,6 @@
 {
     "name": "@paperbits/firebase",
-    "version": "0.1.50",
+    "version": "0.1.51",
     "description": "Firebase client library for Paperbits components.",
     "license": "MIT",
     "author": "Paperbits",
@@ -13,7 +13,7 @@
         "firebase"
     ],
     "dependencies": {
-        "@paperbits/common": "0.1.50",
+        "@paperbits/common": "0.1.51",
         "firebase": "^4.13.1",
         "firebase-admin": "^6.5.1",
         "lodash": "^4.17.11"
