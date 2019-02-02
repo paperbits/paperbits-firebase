@@ -1,18 +1,30 @@
 import * as _ from "lodash";
 import * as Utils from "@paperbits/common/utils";
-import * as firebase from "firebase";
 import { IObjectStorage } from "@paperbits/common/persistence";
 import { FirebaseService } from "./firebaseService";
 
 
 export class FirebaseObjectStorage implements IObjectStorage {
-    private readonly firebaseService: FirebaseService;
+    constructor(private readonly firebaseService: FirebaseService) { }
 
-    constructor(firebaseService: FirebaseService) {
-        this.firebaseService = firebaseService;
+    private normalizeDataObject<T>(dataObject: T): void {
+        if (dataObject instanceof Object) {
+            Object.keys(dataObject).forEach(key => {
+                const child = dataObject[key];
+
+                if (child instanceof Object) {
+                    this.normalizeDataObject(child);
+                }
+                else if (child === undefined) {
+                    dataObject[key] = null;
+                }
+            });
+        }
     }
 
     public async addObject<T>(path: string, dataObject: T): Promise<void> {
+        this.normalizeDataObject(dataObject);
+
         try {
             const databaseRef = await this.firebaseService.getDatabaseRef();
 
@@ -51,6 +63,8 @@ export class FirebaseObjectStorage implements IObjectStorage {
     }
 
     public async updateObject<T>(path: string, dataObject: T): Promise<void> {
+        this.normalizeDataObject(dataObject);
+
         try {
             const databaseRef = await this.firebaseService.getDatabaseRef();
             return await databaseRef.child(path).update(dataObject);
@@ -111,8 +125,6 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
         keys.forEach(key => {
             const changeObject = Utils.getObjectAt(key, delta);
-
-            Utils.cleanupObject(changeObject);
 
             if (changeObject) {
                 saveTasks.push(this.updateObject(key, changeObject));
