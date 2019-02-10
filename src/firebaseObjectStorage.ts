@@ -1,5 +1,6 @@
 import * as _ from "lodash";
 import * as Utils from "@paperbits/common/utils";
+import * as Objects from "@paperbits/common/objects";
 import { IObjectStorage } from "@paperbits/common/persistence";
 import { FirebaseService } from "./firebaseService";
 
@@ -91,13 +92,13 @@ export class FirebaseObjectStorage implements IObjectStorage {
                 const searchTaskResults = await Promise.all(searchPromises);
 
                 searchTaskResults.forEach(x => {
-                    Utils.mergeDeepAt(path, searchResultObject, x);
+                    Objects.mergeDeepAt(path, searchResultObject, x);
                 });
             }
             else {
                 // return all objects
                 const objectData = await pathRef.once("value");
-                Utils.mergeDeepAt(path, searchResultObject, objectData.val());
+                Objects.mergeDeepAt(path, searchResultObject, objectData.val());
             }
 
             const resultObject = Utils.getObjectAt(path, searchResultObject);
