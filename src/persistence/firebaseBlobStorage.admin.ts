@@ -1,6 +1,6 @@
 import { ProgressPromise } from "@paperbits/common";
 import { IBlobStorage } from "@paperbits/common/persistence";
-import { FirebaseService } from "./firebaseService.admin";
+import { FirebaseService } from "../services/firebaseService.admin";
 
 
 export class FirebaseBlobStorage implements IBlobStorage {

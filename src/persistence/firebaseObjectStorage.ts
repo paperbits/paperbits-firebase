@@ -1,8 +1,7 @@
 import * as _ from "lodash";
-import * as Utils from "@paperbits/common/utils";
 import * as Objects from "@paperbits/common/objects";
-import { IObjectStorage } from "@paperbits/common/persistence";
-import { FirebaseService } from "./firebaseService";
+import { IObjectStorage, Query, Operator } from "@paperbits/common/persistence";
+import { FirebaseService } from "../services/firebaseService";
 
 
 export class FirebaseObjectStorage implements IObjectStorage {
@@ -75,32 +74,40 @@ export class FirebaseObjectStorage implements IObjectStorage {
         }
     }
 
-    public async searchObjects<T>(path: string, propertyNames?: string[], searchValue?: string): Promise<T> {
+    public async searchObjects<T>(path: string, query: Query<T>): Promise<T> {
         const searchResultObject: any = {};
 
         try {
+            let snapshot: firebase.database.DataSnapshot;
             const databaseRef = await this.firebaseService.getDatabaseRef();
             const pathRef = databaseRef.child(path);
 
-            if (propertyNames && propertyNames.length && searchValue) {
-                const searchPromises = propertyNames.map(async (propertyName) => {
-                    const query = pathRef.orderByChild(propertyName).equalTo(searchValue);
-                    const objectData = await query.once("value");
-                    return objectData.val();
-                });
+            if (query && query.filters.length > 0) {
+                if (query.filters.length > 1) {
+                    console.warn("Firebase Realtime Database doesn't support filtering by more than 1 property.");
+                }
 
-                const searchTaskResults = await Promise.all(searchPromises);
+                const filter = query.filters[0];
+                let firebaseQuery = pathRef.orderByChild(filter.left);
 
-                searchTaskResults.forEach(x => {
-                    Objects.mergeDeepAt(path, searchResultObject, x);
-                });
+                switch (filter.operator) {
+                    case Operator.contains:
+                        firebaseQuery = firebaseQuery.startAt(filter.right);
+                        break;
+                    case Operator.equals:
+                        firebaseQuery = firebaseQuery.equalTo(filter.right);
+                        break;
+
+                    default:
+                        throw new Error("Cannot translate operator into Firebase Realtime Database query.");
+                }
+                snapshot = await firebaseQuery.once("value");
             }
             else {
-                // return all objects
-                const objectData = await pathRef.once("value");
-                Objects.mergeDeepAt(path, searchResultObject, objectData.val());
+                snapshot = await pathRef.once("value");
             }
 
+            Objects.mergeDeepAt(path, searchResultObject, snapshot.val());
             const resultObject = Objects.getObjectAt(path, searchResultObject);
 
             return <T>(resultObject || {});

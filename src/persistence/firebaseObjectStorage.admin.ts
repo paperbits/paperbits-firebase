@@ -1,14 +1,11 @@
 import * as _ from "lodash";
-import { IObjectStorage } from "@paperbits/common/persistence";
-import { FirebaseService } from "./firebaseService.admin";
+import * as Objects from "@paperbits/common/objects";
+import { IObjectStorage, Query, Operator } from "@paperbits/common/persistence";
+import { FirebaseService } from "../services/firebaseService.admin";
 
 
 export class FirebaseObjectStorage implements IObjectStorage {
-    private readonly firebaseService: FirebaseService;
-
-    constructor(firebaseService: FirebaseService) {
-        this.firebaseService = firebaseService;
-    }
+    constructor(private readonly firebaseService: FirebaseService) { }
 
     public async addObject<T>(path: string, dataObject: T): Promise<void> {
         try {
@@ -58,51 +55,49 @@ export class FirebaseObjectStorage implements IObjectStorage {
         }
     }
 
-    public async searchObjects<T>(path: string, propertyNames?: string[], searchValue?: string, startAtSearch?: boolean): Promise<T[]> {
+    public async searchObjects<T>(path: string, query: Query<T>): Promise<T> {
+        const searchResultObject: any = {};
+
         try {
             const databaseRef = await this.firebaseService.getDatabaseRef();
             const pathRef = databaseRef.child(path);
 
-            if (propertyNames && propertyNames.length && searchValue) {
-                const searchPromises = propertyNames.map(async (propertyName) => {
-                    const query = startAtSearch
-                        ? pathRef.orderByChild(propertyName).startAt(searchValue)
-                        : pathRef.orderByChild(propertyName).equalTo(searchValue);
+            if (query && query.filters.length > 0) {
+                if (query.filters.length > 1) {
+                    console.warn("Firebase Realtime Database doesn't support filtering by more than 1 property.");
+                }
 
-                    const result = await query.once("value");
-                    return this.collectResult(result);
-                });
+                const filter = query.filters[0];
+                let firebaseQuery = pathRef.orderByChild(filter.left);
 
-                const searchTaskResults = await Promise.all(searchPromises);
-                return _.flatten(searchTaskResults);
+                switch (filter.operator) {
+                    case Operator.contains:
+                        firebaseQuery = firebaseQuery.startAt(filter.right);
+                        break;
+                    case Operator.equals:
+                        firebaseQuery = firebaseQuery.equalTo(filter.right);
+                        break;
+
+                    default:
+                        throw new Error("Cannot translate operator into Firebase Realtime Database query.");
+                }
+
+                const searchResultObject = await firebaseQuery.once("value");
+                return searchResultObject.val();
+
+                Objects.mergeDeepAt(path, searchResultObject, searchResultObject);
             }
             else {
-                // return all objects
                 const objectData = await pathRef.once("value");
-                const result = this.collectResult(objectData);
-                return result;
+                Objects.mergeDeepAt(path, searchResultObject, objectData.val());
             }
+
+            const resultObject = Objects.getObjectAt(path, searchResultObject);
+
+            return <T>(resultObject || {});
         }
         catch (error) {
             throw new Error(`Could not search object '${path}'. Error: ${error}.`);
         }
-    }
-
-    private collectResult(objectData): any[] {
-        const result = [];
-
-        if (objectData.hasChildren()) {
-            const items = objectData.val();
-
-            if (items) {
-                if (Array.isArray(items)) {
-                    items.map((item) => result.push(item));
-                }
-                else {
-                    _.map(items, (item) => result.push(item));
-                }
-            }
-        }
-        return result;
     }
 }
