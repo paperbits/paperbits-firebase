@@ -15,5 +15,13 @@ export class FirebaseModule implements IInjectorModule {
         injector.bindSingleton("userService", FirebaseUserService);
         injector.bindSingleton("blobStorage", FirebaseBlobStorage);
         injector.bindSingleton("objectStorage", FirebaseObjectStorage);
+        injector.bindSingletonFactory("customFirebaseAuthService", 
+            (injector: IInjector) => {
+                try {
+                    return injector.resolve("customFirebaseAuthServiceFactory")
+                } catch {
+                    return undefined
+                }
+            });
     }
 }

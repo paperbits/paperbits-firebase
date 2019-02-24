@@ -3,6 +3,7 @@ import "firebase/firebase-auth";
 import "firebase/firebase-database";
 import "firebase/firebase-storage";
 import { ISettingsProvider } from "@paperbits/common/configuration";
+import { ICustomAuthenticationServiceFactory, ICustomAuthenticationService } from "./ICustomAuthenticationService";
 
 export interface BasicFirebaseAuth {
     email: string;
@@ -21,10 +22,10 @@ export interface FirebaseAuth {
     github: GithubFirebaseAuth;
     google: GoogleFirebaseAuth;
     basic: BasicFirebaseAuth;
+    custom: boolean;
 }
 
 export class FirebaseService {
-    private readonly settingsProvider: ISettingsProvider;
 
     private rootKey: string;
     private initializationPromise: Promise<any>;
@@ -32,8 +33,9 @@ export class FirebaseService {
 
     public authenticatedUser: firebase.User;
 
-    constructor(settingsProvider: ISettingsProvider) {
-        this.settingsProvider = settingsProvider;
+    constructor(
+        private settingsProvider: ISettingsProvider,
+        private customFirebaseAuthService: ICustomAuthenticationService) {
     }
 
     private async applyConfiguration(firebaseSettings: Object): Promise<any> {
@@ -88,6 +90,13 @@ export class FirebaseService {
         if (auth.basic) {
             console.info("Firebase: Signing-in with email and password...");
             await firebase.auth().signInWithEmailAndPassword(auth.basic.email, auth.basic.password);
+            return;
+        }
+
+        if (auth.custom) {
+            console.info("Firebase: Signing-in with custom access token...");
+            const customAccessToken = await this.customFirebaseAuthService.acquireFirebaseCustomAccessToken()
+            await firebase.auth().signInWithCustomToken(customAccessToken);
             return;
         }
     }
