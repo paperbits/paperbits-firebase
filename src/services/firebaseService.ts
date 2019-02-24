@@ -3,7 +3,7 @@ import "firebase/firebase-auth";
 import "firebase/firebase-database";
 import "firebase/firebase-storage";
 import { ISettingsProvider } from "@paperbits/common/configuration";
-import { ICustomAuthenticationServiceFactory, ICustomAuthenticationService } from "./ICustomAuthenticationService";
+import { ICustomAuthenticationService } from "./ICustomAuthenticationService";
 
 export interface BasicFirebaseAuth {
     email: string;
