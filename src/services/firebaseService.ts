@@ -3,6 +3,7 @@ import "firebase/firebase-auth";
 import "firebase/firebase-database";
 import "firebase/firebase-storage";
 import { ISettingsProvider } from "@paperbits/common/configuration";
+import { ICustomAuthenticationService } from "./ICustomAuthenticationService";
 
 export interface BasicFirebaseAuth {
     email: string;
@@ -21,10 +22,10 @@ export interface FirebaseAuth {
     github: GithubFirebaseAuth;
     google: GoogleFirebaseAuth;
     basic: BasicFirebaseAuth;
+    custom: boolean;
 }
 
 export class FirebaseService {
-    private readonly settingsProvider: ISettingsProvider;
 
     private rootKey: string;
     private initializationPromise: Promise<any>;
@@ -32,8 +33,9 @@ export class FirebaseService {
 
     public authenticatedUser: firebase.User;
 
-    constructor(settingsProvider: ISettingsProvider) {
-        this.settingsProvider = settingsProvider;
+    constructor(
+        private settingsProvider: ISettingsProvider,
+        private customFirebaseAuthService: ICustomAuthenticationService) {
     }
 
     private async applyConfiguration(firebaseSettings: Object): Promise<any> {
@@ -90,6 +92,15 @@ export class FirebaseService {
             await firebase.auth().signInWithEmailAndPassword(auth.basic.email, auth.basic.password);
             return;
         }
+
+        if (auth.custom) {
+            console.info("Firebase: Signing-in with custom access token...");
+            const customAccessToken = await this.customFirebaseAuthService.acquireFirebaseCustomAccessToken()
+            await firebase.auth().signInWithCustomToken(customAccessToken).catch(function(error) {
+                console.log(error)
+              });;
+            return;
+        }
     }
 
     private async authenticate(auth: FirebaseAuth): Promise<void> {
@@ -101,7 +112,7 @@ export class FirebaseService {
             firebase.auth().onAuthStateChanged(async (user: firebase.User) => {
                 if (user) {
                     this.authenticatedUser = user;
-                    console.info(`Logged in as ${user.displayName || user.email || "anonymous"}.`);
+                    console.info(`Logged in as ${user.displayName || user.email || user.isAnonymous ? "anonymous" : "custom" }.`);
                     resolve();
                     return;
                 }
@@ -122,7 +133,7 @@ export class FirebaseService {
         this.initializationPromise = new Promise(async (resolve, reject) => {
             const firebaseSettings = await this.settingsProvider.getSetting<any>("firebase");
             this.rootKey = firebaseSettings.rootKey || "/";
-
+        
             await this.applyConfiguration(firebaseSettings);
             await this.authenticate(firebaseSettings["auth"]);
 
