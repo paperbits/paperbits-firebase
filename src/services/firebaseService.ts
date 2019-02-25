@@ -131,9 +131,6 @@ export class FirebaseService {
         }
 
         this.initializationPromise = new Promise(async (resolve, reject) => {
-            if (this.customFirebaseAuthService) {
-                await this.customFirebaseAuthService.acquireFirebaseCustomAccessToken()
-            }
             const firebaseSettings = await this.settingsProvider.getSetting<any>("firebase");
             this.rootKey = firebaseSettings.rootKey || "/";
         
