@@ -1,6 +1,6 @@
 import { IInjector, IInjectorModule } from "@paperbits/common/injection";
-import { FirebaseObjectStorage } from "./firebaseObjectStorage.admin";
-import { FirebaseBlobStorage } from "./firebaseBlobStorage.admin";
+import { FirebaseObjectStorage } from "./persistence/firebaseObjectStorage.admin";
+import { FirebaseBlobStorage } from "./persistence/firebaseBlobStorage.admin";
 import { FirebaseService } from "./services/firebaseService.admin";
 
 
