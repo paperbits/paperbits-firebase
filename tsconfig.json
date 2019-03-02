@@ -2,15 +2,12 @@
     "compilerOptions": {
         "target": "es5",
         "lib": [
-            "es2015",
-            "es2016",
-            "es6",
-            "es7",
-            "dom"
+            "dom",
+            "es2018"
         ],
         "module": "commonjs",
         "moduleResolution": "node",
-        "declaration": true,
+        "declaration": false,
         "noImplicitAny": false,
         "noStrictGenericChecks": true,
         "removeComments": true,
@@ -20,13 +17,9 @@
         "emitDecoratorMetadata": true,
         "allowUnreachableCode": true,
         "listFiles": false,
-        "sourceMap": true,
-        "allowSyntheticDefaultImports": true,
-        "outDir": "./dist"
+        "sourceMap": false,
+        "allowSyntheticDefaultImports": true
     },
-    "include": [
-        "./src/**/*.ts"
-    ],
     "exclude": [
         "./node_modules"
     ]
