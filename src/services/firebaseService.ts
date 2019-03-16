@@ -22,6 +22,7 @@ export interface FirebaseAuth {
     github: GithubFirebaseAuth;
     google: GoogleFirebaseAuth;
     basic: BasicFirebaseAuth;
+    serviceAccount: any;
     custom: boolean;
 }
 
@@ -96,7 +97,7 @@ export class FirebaseService {
         if (auth.custom) {
             console.info("Firebase: Signing-in with custom access token...");
             const customAccessToken = await this.customFirebaseAuthService.acquireFirebaseCustomAccessToken()
-            await firebase.auth().signInWithCustomToken(customAccessToken).catch(function(error) {
+            await firebase.auth().signInWithCustomToken(customAccessToken.access_token).catch(function(error) {
                 console.log(error)
               });;
             return;

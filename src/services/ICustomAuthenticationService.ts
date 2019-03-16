@@ -1,3 +1,5 @@
+import * as admin from "firebase-admin";
+
 export interface ICustomAuthenticationService {
-    acquireFirebaseCustomAccessToken(): Promise<any>
+    acquireFirebaseCustomAccessToken(): Promise<admin.GoogleOAuthAccessToken>
 } 
