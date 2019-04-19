@@ -1,7 +1,7 @@
 import * as firebase from "firebase/app";
-import "firebase/firebase-auth";
-import "firebase/firebase-database";
-import "firebase/firebase-storage";
+import "firebase/auth";
+import "firebase/database";
+import "firebase/storage";
 import { ISettingsProvider } from "@paperbits/common/configuration";
 import { ICustomAuthenticationService } from "./ICustomAuthenticationService";
 
