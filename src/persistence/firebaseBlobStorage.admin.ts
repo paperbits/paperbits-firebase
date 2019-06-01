@@ -1,4 +1,3 @@
-import { ProgressPromise } from "@paperbits/common";
 import { IBlobStorage } from "@paperbits/common/persistence";
 import { FirebaseService } from "../services/firebaseService.admin";
 
@@ -6,19 +5,15 @@ import { FirebaseService } from "../services/firebaseService.admin";
 export class FirebaseBlobStorage implements IBlobStorage {
     constructor(private readonly firebaseService: FirebaseService) { }
 
-    public async uploadBlob(name: string, content: Uint8Array, contentType?: string): ProgressPromise<void> {
-        return new ProgressPromise<void>(async (resolve, reject, progress) => {
+    public async uploadBlob(name: string, content: Uint8Array, contentType?: string): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             const storageRef = await this.firebaseService.getStorageRef();
-            const metaData = contentType ? { contentType: contentType } : null;
-
-            progress(0);
 
             await storageRef.file(name).save(new Buffer(content), {
                 metadata: {
                     contentType: contentType
                 }
             });
-            progress(100);
         });
     }
 
