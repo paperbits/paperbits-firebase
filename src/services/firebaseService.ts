@@ -26,12 +26,24 @@ export interface FirebaseAuth {
     custom: boolean;
 }
 
-export class FirebaseService {
+export interface FirebaseSettings {
+    apiKey: string;
+    authDomain: string;
+    databaseURL: string;
+    projectId: string;
+    storageBucket: string;
+    messagingSenderId: string;
+    rootKey: string;
+    storageBasePath: string;
+    auth: FirebaseAuth;
+}
 
+export class FirebaseService {
     private rootKey: string;
     private initializationPromise: Promise<any>;
     private authenticationPromise: Promise<any>;
 
+    public firebaseApp: firebase.app.App;
     public authenticatedUser: firebase.User;
 
     constructor(
@@ -39,14 +51,15 @@ export class FirebaseService {
         private customFirebaseAuthService: ICustomAuthenticationService) {
     }
 
-    private async applyConfiguration(firebaseSettings: Object): Promise<any> {
-        firebase.initializeApp(firebaseSettings); // This can be called only once
+    private async applyConfiguration(firebaseSettings: FirebaseSettings): Promise<void> {
+        const appName = firebaseSettings.rootKey;
+        this.firebaseApp = firebase.initializeApp(firebaseSettings, appName); // This can be called only once
     }
 
     private async trySignIn(auth: FirebaseAuth): Promise<void> {
         if (!auth) {
             console.info("Firebase: Signing-in anonymously...");
-            await firebase.auth().signInAnonymously();
+            await this.firebaseApp.auth().signInAnonymously();
             return;
         }
 
@@ -63,7 +76,7 @@ export class FirebaseService {
             const redirectResult = await firebase.auth().getRedirectResult();
 
             if (!redirectResult.credential) {
-                await firebase.auth().signInWithRedirect(provider);
+                await this.firebaseApp.auth().signInWithRedirect(provider);
                 return;
             }
             return;
@@ -82,7 +95,7 @@ export class FirebaseService {
             const redirectResult = await firebase.auth().getRedirectResult();
 
             if (!redirectResult.credential) {
-                await firebase.auth().signInWithRedirect(provider);
+                await this.firebaseApp.auth().signInWithRedirect(provider);
                 return;
             }
             return;
@@ -90,16 +103,18 @@ export class FirebaseService {
 
         if (auth.basic) {
             console.info("Firebase: Signing-in with email and password...");
-            await firebase.auth().signInWithEmailAndPassword(auth.basic.email, auth.basic.password);
+            await this.firebaseApp.auth().signInWithEmailAndPassword(auth.basic.email, auth.basic.password);
             return;
         }
 
         if (auth.custom) {
             console.info("Firebase: Signing-in with custom access token...");
-            const customAccessToken = await this.customFirebaseAuthService.acquireFirebaseCustomAccessToken()
-            await firebase.auth().signInWithCustomToken(customAccessToken.access_token).catch(function(error) {
-                console.log(error)
-              });;
+            const customAccessToken = await this.customFirebaseAuthService.acquireFirebaseCustomAccessToken();
+
+            await this.firebaseApp.auth().signInWithCustomToken(customAccessToken.access_token).catch((error) => {
+                console.error(error);
+            });
+
             return;
         }
     }
@@ -110,10 +125,10 @@ export class FirebaseService {
         }
 
         this.authenticationPromise = new Promise<void>((resolve) => {
-            firebase.auth().onAuthStateChanged(async (user: firebase.User) => {
+            firebase.auth(this.firebaseApp).onAuthStateChanged(async (user: firebase.User) => {
                 if (user) {
                     this.authenticatedUser = user;
-                    console.info(`Logged in as ${user.displayName || user.email || user.isAnonymous ? "anonymous" : "custom" }.`);
+                    console.info(`Logged in as ${user.displayName || user.email || user.isAnonymous ? "anonymous" : "custom"}.`);
                     resolve();
                     return;
                 }
@@ -132,13 +147,13 @@ export class FirebaseService {
         }
 
         this.initializationPromise = new Promise(async (resolve, reject) => {
-            const firebaseSettings = await this.settingsProvider.getSetting<any>("firebase");
+            const firebaseSettings = await this.settingsProvider.getSetting<FirebaseSettings>("firebase");
             this.rootKey = firebaseSettings.rootKey || "/";
-        
-            await this.applyConfiguration(firebaseSettings);
-            await this.authenticate(firebaseSettings["auth"]);
 
-            resolve(firebase);
+            await this.applyConfiguration(firebaseSettings);
+            await this.authenticate(firebaseSettings.auth);
+
+            resolve(this.firebaseApp);
         });
 
         return this.initializationPromise;
