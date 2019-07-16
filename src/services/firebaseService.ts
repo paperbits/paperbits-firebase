@@ -96,10 +96,15 @@ export class FirebaseService {
 
         if (auth.custom) {
             console.info("Firebase: Signing-in with custom access token...");
-            const customAccessToken = await this.customFirebaseAuthService.acquireFirebaseCustomAccessToken()
-            await firebase.auth().signInWithCustomToken(customAccessToken.access_token).catch(function(error) {
-                console.log(error)
-              });;
+
+            const customAccessToken = await this.customFirebaseAuthService.acquireFirebaseCustomAccessToken();
+
+            await firebase.auth()
+                .signInWithCustomToken(customAccessToken.access_token)
+                .catch((error) => {
+                    console.error(error);
+                });
+
             return;
         }
     }
@@ -113,7 +118,7 @@ export class FirebaseService {
             firebase.auth().onAuthStateChanged(async (user: firebase.User) => {
                 if (user) {
                     this.authenticatedUser = user;
-                    console.info(`Logged in as ${user.displayName || user.email || user.isAnonymous ? "anonymous" : "custom" }.`);
+                    console.info(`Logged in as ${user.displayName || user.email || user.isAnonymous ? "anonymous" : "custom"}.`);
                     resolve();
                     return;
                 }
@@ -134,7 +139,7 @@ export class FirebaseService {
         this.initializationPromise = new Promise(async (resolve, reject) => {
             const firebaseSettings = await this.settingsProvider.getSetting<any>("firebase");
             this.rootKey = firebaseSettings.rootKey || "/";
-        
+
             await this.applyConfiguration(firebaseSettings);
             await this.authenticate(firebaseSettings["auth"]);
 
