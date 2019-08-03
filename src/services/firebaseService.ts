@@ -33,13 +33,14 @@ export interface FirebaseSettings {
     projectId: string;
     storageBucket: string;
     messagingSenderId: string;
-    rootKey: string;
+    databaseRootKey: string;
     storageBasePath: string;
     auth: FirebaseAuth;
 }
 
 export class FirebaseService {
-    private rootKey: string;
+    private databaseRootKey: string;
+    private storageBasePath: string;
     private initializationPromise: Promise<any>;
     private authenticationPromise: Promise<any>;
 
@@ -52,7 +53,10 @@ export class FirebaseService {
     }
 
     private async applyConfiguration(firebaseSettings: FirebaseSettings): Promise<void> {
-        const appName = firebaseSettings.rootKey;
+        this.databaseRootKey = firebaseSettings.databaseRootKey;
+        this.storageBasePath = firebaseSettings.storageBasePath;
+
+        const appName = firebaseSettings.databaseRootKey;
         this.firebaseApp = firebase.initializeApp(firebaseSettings, appName); // This can be called only once
     }
 
@@ -150,7 +154,7 @@ export class FirebaseService {
 
         this.initializationPromise = new Promise(async (resolve, reject) => {
             const firebaseSettings = await this.settingsProvider.getSetting<FirebaseSettings>("firebase");
-            this.rootKey = firebaseSettings.rootKey || "/";
+            this.databaseRootKey = firebaseSettings.databaseRootKey || "/";
 
             await this.applyConfiguration(firebaseSettings);
             await this.authenticate(firebaseSettings.auth);
@@ -163,14 +167,14 @@ export class FirebaseService {
 
     public async getDatabaseRef(): Promise<firebase.database.Reference> {
         const firebaseRef = await this.getFirebaseRef();
-        const databaseRef = await firebaseRef.database().ref(this.rootKey);
+        const databaseRef = await firebaseRef.database().ref(this.databaseRootKey);
 
         return databaseRef;
     }
 
     public async getStorageRef(): Promise<firebase.storage.Reference> {
         const firebaseRef = await this.getFirebaseRef();
-        const storageRef = firebaseRef.storage().ref(this.rootKey);
+        const storageRef = firebaseRef.storage().ref(this.storageBasePath);
 
         return storageRef;
     }

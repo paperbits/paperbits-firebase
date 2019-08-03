@@ -5,7 +5,7 @@ import { FirebaseAuth } from "./firebaseService";
 
 
 export class FirebaseService {
-    public rootKey: string;
+    public databaseRootKey: string;
     public storageBasePath: string;
     private initializationPromise: Promise<any>;
 
@@ -14,7 +14,7 @@ export class FirebaseService {
         private readonly customCredentialsProvider: CustomCredentialProvider) { }
 
     private async applyConfiguration(firebaseSettings: Object): Promise<any> {
-        this.rootKey = firebaseSettings["rootKey"];
+        this.databaseRootKey = firebaseSettings["databaseRootKey"];
         this.storageBasePath = firebaseSettings["storageBasePath"];
 
         const auth: FirebaseAuth = firebaseSettings["auth"];
@@ -30,7 +30,7 @@ export class FirebaseService {
 
     public async getDatabaseRef(): Promise<admin.database.Reference> {
         await this.getFirebaseRef();
-        const databaseRef = await admin.database().ref(this.rootKey);
+        const databaseRef = await admin.database().ref(this.databaseRootKey);
 
         return databaseRef;
     }
@@ -50,7 +50,7 @@ export class FirebaseService {
 
         this.initializationPromise = new Promise(async (resolve, reject) => {
             const firebaseSettings = await this.settingsProvider.getSetting<any>("firebase");
-            this.rootKey = this.rootKey = firebaseSettings.rootKey || "/";
+            this.databaseRootKey = this.databaseRootKey = firebaseSettings.rootKey || "/";
 
             await this.applyConfiguration(firebaseSettings);
 
