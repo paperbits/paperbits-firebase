@@ -27,6 +27,6 @@ export class FirebaseUserService implements IUserService {
     }
 
     public async getRoles(): Promise<RoleModel[]> {
-        return [BuiltInRoles.anonymous, BuiltInRoles.authenticated];
+        return [BuiltInRoles.everyone, BuiltInRoles.anonymous, BuiltInRoles.authenticated];
     }
 }
