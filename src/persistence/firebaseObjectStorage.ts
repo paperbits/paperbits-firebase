@@ -200,7 +200,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             let data = snapshot.val();
 
             // Query search optimization: Firebase search only by 1 filter, apply other filters.
-            if (query && query.filters.length > 1) {
+            if (data && query && query.filters.length > 1) {
                 query.filters = query.filters.slice(1);
                 data = this.searchInResult<Bag<T>>(data, query);
             }
