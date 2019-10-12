@@ -1,8 +1,8 @@
-import { IUserService, RoleModel, BuiltInRoles } from "@paperbits/common/user";
+import { UserService, RoleModel, BuiltInRoles } from "@paperbits/common/user";
 import { FirebaseService } from "./firebaseService";
 
 
-export class FirebaseUserService implements IUserService {
+export class FirebaseUserService implements UserService {
     constructor(private readonly firebaseService: FirebaseService) { }
 
     public async getUserPhotoUrl(): Promise<string> {
@@ -15,18 +15,14 @@ export class FirebaseUserService implements IUserService {
         return this.firebaseService.authenticatedUser.photoURL;
     }
 
-    public async getUserRole(): Promise<RoleModel[]> {
+    public async getUserRoles(): Promise<string[]> {
         await this.firebaseService.getFirebaseRef();
 
         if (this.firebaseService.authenticatedUser) {
-            return [BuiltInRoles.authenticated];
+            return [BuiltInRoles.authenticated.key];
         }
         else {
-            return [BuiltInRoles.anonymous];
+            return [BuiltInRoles.anonymous.key];
         }
-    }
-
-    public async getRoles(): Promise<RoleModel[]> {
-        return [BuiltInRoles.everyone, BuiltInRoles.anonymous, BuiltInRoles.authenticated];
     }
 }
