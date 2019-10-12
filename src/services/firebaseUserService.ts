@@ -25,4 +25,8 @@ export class FirebaseUserService implements UserService {
             return [BuiltInRoles.anonymous.key];
         }
     }
+
+    public async setUserRoles(roles: string[]): Promise<void> {
+        // Not supported.
+    }
 }
