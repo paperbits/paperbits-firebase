@@ -14,9 +14,10 @@ export class FirebaseModule implements IInjectorModule {
         injector.bindSingletonFactory("customFirebaseAuthService", 
             (injector: IInjector) => {
                 try {
-                    return injector.resolve("customFirebaseAuthServiceFactory")
-                } catch {
-                    return undefined
+                    return injector.resolve("customFirebaseAuthServiceFactory");
+                }
+                catch {
+                    return undefined;
                 }
             });
     }
