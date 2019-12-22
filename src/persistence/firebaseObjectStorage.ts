@@ -1,12 +1,16 @@
 import * as _ from "lodash";
 import * as Objects from "@paperbits/common/objects";
 import { IObjectStorage, Query, Operator, OrderDirection } from "@paperbits/common/persistence";
-import { FirebaseService } from "../services/firebaseService";
 import { Bag } from "@paperbits/common/bag";
+import { ViewManager } from "@paperbits/common/ui";
+import { FirebaseService } from "../services/firebaseService";
 
 
 export class FirebaseObjectStorage implements IObjectStorage {
-    constructor(private readonly firebaseService: FirebaseService) { }
+    constructor(
+        private readonly firebaseService: FirebaseService,
+        private readonly viewManager: ViewManager
+    ) { }
 
     private normalizeDataObject<T>(dataObject: T): void {
         if (dataObject instanceof Object) {
@@ -48,7 +52,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
                             }
                             continue;
                         }
-                        
+
                         if (!property) {
                             meetsCriteria = false;
                             continue;
@@ -204,7 +208,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
                 query.filters = query.filters.slice(1);
                 data = this.searchInResult<Bag<T>>(data, query);
             }
-            
+
             Objects.mergeDeepAt(path, searchResultObject, data);
 
             const resultObject = Objects.getObjectAt(path, searchResultObject);
@@ -241,5 +245,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
         });
 
         await Promise.all(saveTasks);
+
+        this.viewManager.notifySuccess("Changes saved", "All changes were pushed to server");
     }
 }
