@@ -2,15 +2,11 @@ import * as _ from "lodash";
 import * as Objects from "@paperbits/common/objects";
 import { IObjectStorage, Query, Operator, OrderDirection } from "@paperbits/common/persistence";
 import { Bag } from "@paperbits/common/bag";
-import { ViewManager } from "@paperbits/common/ui";
 import { FirebaseService } from "../services/firebaseService";
 
 
 export class FirebaseObjectStorage implements IObjectStorage {
-    constructor(
-        private readonly firebaseService: FirebaseService,
-        private readonly viewManager: ViewManager
-    ) { }
+    constructor(private readonly firebaseService: FirebaseService) { }
 
     private normalizeDataObject<T>(dataObject: T): void {
         if (dataObject instanceof Object) {
@@ -245,7 +241,5 @@ export class FirebaseObjectStorage implements IObjectStorage {
         });
 
         await Promise.all(saveTasks);
-
-        this.viewManager.notifySuccess("Changes saved", "All changes were pushed to server");
     }
 }
