@@ -9,7 +9,7 @@ export class FirebaseBlobStorage implements IBlobStorage {
         return new Promise<void>(async (resolve, reject) => {
             const storageRef = await this.firebaseService.getStorageRef();
 
-            await storageRef.file(name).save(new Buffer(content), {
+            await storageRef.file(name).save(Buffer.from(content.buffer), {
                 metadata: {
                     contentType: contentType
                 }
