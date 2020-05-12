@@ -60,7 +60,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
 
                         switch (operator) {
                             case Operator.contains:
-                                if (!left.contains(right)) {
+                                if (!left.includes(right)) {
                                     meetsCriteria = false;
                                 }
                                 break;
