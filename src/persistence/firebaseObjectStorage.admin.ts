@@ -19,7 +19,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             }
         }
         catch (error) {
-            throw new Error(`Could not add object '${path}'. Error: ${error}.`);
+            throw new Error(`Could not add object '${path}'. ${error}.`);
         }
     }
 
@@ -31,7 +31,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             return snapshot.val();
         }
         catch (error) {
-            throw new Error(`Could not retrieve object '${path}'. Error: ${error}.`);
+            throw new Error(`Could not retrieve object '${path}'. ${error}.`);
         }
     }
 
@@ -41,7 +41,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             databaseRef.child(path).remove();
         }
         catch (error) {
-            throw new Error(`Could not delete object '${path}'. Error: ${error}.`);
+            throw new Error(`Could not delete object '${path}'. ${error}.`);
         }
     }
 
@@ -51,7 +51,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             return await databaseRef.child(path).update(dataObject);
         }
         catch (error) {
-            throw new Error(`Could not update object '${path}'. Error: ${error}`);
+            throw new Error(`Could not update object '${path}'. ${error}`);
         }
     }
 
@@ -97,7 +97,7 @@ export class FirebaseObjectStorage implements IObjectStorage {
             return <T>(resultObject || {});
         }
         catch (error) {
-            throw new Error(`Could not search object '${path}'. Error: ${error}.`);
+            throw new Error(`Could not search object '${path}'. ${error}.`);
         }
     }
 }
