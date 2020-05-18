@@ -12,7 +12,7 @@ export class FirebaseModule implements IInjectorModule {
 
     public register(injector: IInjector): void {
         injector.bindSingleton("firebaseService", FirebaseService);
-        // injector.bindSingleton("userService", FirebaseUserService);
+        injector.bindSingleton("userService", FirebaseUserService);
         injector.bindSingleton("blobStorage", FirebaseBlobStorage);
         injector.bindSingleton("objectStorage", FirebaseObjectStorage);
         injector.bindSingletonFactory("customFirebaseAuthService",

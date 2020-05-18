@@ -4,6 +4,7 @@ import "firebase/database";
 import "firebase/storage";
 import { ISettingsProvider } from "@paperbits/common/configuration";
 import { ICustomAuthenticationService } from "./ICustomAuthenticationService";
+import { Logger } from "@paperbits/common/logging";
 
 export interface BasicFirebaseAuth {
     email: string;
@@ -48,8 +49,9 @@ export class FirebaseService {
     public authenticatedUser: firebase.User;
 
     constructor(
-        private settingsProvider: ISettingsProvider,
-        private customFirebaseAuthService: ICustomAuthenticationService) {
+        private readonly settingsProvider: ISettingsProvider,
+        private readonly customFirebaseAuthService: ICustomAuthenticationService,
+        private readonly logger: Logger) {
     }
 
     private async applyConfiguration(firebaseSettings: FirebaseSettings): Promise<void> {
@@ -64,6 +66,7 @@ export class FirebaseService {
         if (!auth) {
             console.info("Firebase: Signing-in anonymously...");
             await this.firebaseApp.auth().signInAnonymously();
+            await this.logger.traceSession();
             return;
         }
 
@@ -134,7 +137,11 @@ export class FirebaseService {
             firebase.auth(this.firebaseApp).onAuthStateChanged(async (user: firebase.User) => {
                 if (user) {
                     this.authenticatedUser = user;
-                    console.info(`Logged in as ${user.displayName || user.email || user.isAnonymous ? "anonymous" : "custom"}.`);
+                    const userName = user.displayName || user.email || user.isAnonymous ? "Anonymous" : "Custom";
+                    
+                    await this.logger.traceEvent(`Logged in as ${userName}.`);
+                    await this.logger.traceSession(userName);
+
                     resolve();
                     return;
                 }

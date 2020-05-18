@@ -1,9 +1,17 @@
-import { UserService, RoleModel, BuiltInRoles } from "@paperbits/common/user";
+import { UserService, BuiltInRoles } from "@paperbits/common/user";
 import { FirebaseService } from "./firebaseService";
 
 
 export class FirebaseUserService implements UserService {
     constructor(private readonly firebaseService: FirebaseService) { }
+
+    public async getUserName(): Promise<string> {
+        if (!this.firebaseService.authenticatedUser) {
+            return null;
+        }
+
+        return this.firebaseService.authenticatedUser.displayName;
+    }
 
     public async getUserPhotoUrl(): Promise<string> {
         await this.firebaseService.getFirebaseRef();
