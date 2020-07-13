@@ -66,7 +66,7 @@ export class FirebaseService {
         if (!auth) {
             console.info("Firebase: Signing-in anonymously...");
             await this.firebaseApp.auth().signInAnonymously();
-            await this.logger.traceSession();
+            await this.logger.trackSession();
             return;
         }
 
@@ -138,9 +138,9 @@ export class FirebaseService {
                 if (user) {
                     this.authenticatedUser = user;
                     const userName = user.displayName || user.email || user.isAnonymous ? "Anonymous" : "Custom";
-                    
-                    await this.logger.traceEvent(`Logged in as ${userName}.`);
-                    await this.logger.traceSession(userName);
+
+                    await this.logger.trackEvent(`Logged in as ${userName}.`);
+                    await this.logger.trackSession({ userName: userName });
 
                     resolve();
                     return;
