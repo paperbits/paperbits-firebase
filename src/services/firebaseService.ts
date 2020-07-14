@@ -137,10 +137,10 @@ export class FirebaseService {
             firebase.auth(this.firebaseApp).onAuthStateChanged(async (user: firebase.User) => {
                 if (user) {
                     this.authenticatedUser = user;
-                    const userName = user.displayName || user.email || user.isAnonymous ? "Anonymous" : "Custom";
+                    const userId = user.displayName || user.email || user.isAnonymous ? "Anonymous" : "Custom";
 
-                    await this.logger.trackEvent(`Logged in as ${userName}.`);
-                    await this.logger.trackSession({ userName: userName });
+                    this.logger.trackEvent("Startup", { message: `Logged in as ${userId}.` });
+                    await this.logger.trackSession({ userId: userId });
 
                     resolve();
                     return;
