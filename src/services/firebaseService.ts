@@ -3,41 +3,10 @@ import "firebase/auth";
 import "firebase/database";
 import "firebase/storage";
 import { ISettingsProvider } from "@paperbits/common/configuration";
-import { ICustomAuthenticationService } from "./ICustomAuthenticationService";
 import { Logger } from "@paperbits/common/logging";
+import { FirebaseSettings } from "./firebaseSettings";
+import { FirebaseAuthService } from "./firebaseAuthService";
 
-export interface BasicFirebaseAuth {
-    email: string;
-    password: string;
-}
-
-export interface GithubFirebaseAuth {
-    scopes: string[];
-}
-
-export interface GoogleFirebaseAuth {
-    scopes: string[];
-}
-
-export interface FirebaseAuth {
-    github: GithubFirebaseAuth;
-    google: GoogleFirebaseAuth;
-    basic: BasicFirebaseAuth;
-    serviceAccount: any;
-    custom: boolean;
-}
-
-export interface FirebaseSettings {
-    apiKey: string;
-    authDomain: string;
-    databaseURL: string;
-    projectId: string;
-    storageBucket: string;
-    messagingSenderId: string;
-    databaseRootKey: string;
-    storageBasePath: string;
-    auth: FirebaseAuth;
-}
 
 export class FirebaseService {
     private databaseRootKey: string;
@@ -50,7 +19,7 @@ export class FirebaseService {
 
     constructor(
         private readonly settingsProvider: ISettingsProvider,
-        private readonly customFirebaseAuthService: ICustomAuthenticationService,
+        private readonly firebaseAuthService: FirebaseAuthService,
         private readonly logger: Logger) {
     }
 
@@ -62,73 +31,11 @@ export class FirebaseService {
         this.firebaseApp = firebase.initializeApp(firebaseSettings, appName); // This can be called only once
     }
 
-    private async trySignIn(auth: FirebaseAuth): Promise<void> {
-        if (!auth) {
-            console.info("Firebase: Signing-in anonymously...");
-            await this.firebaseApp.auth().signInAnonymously();
-            await this.logger.trackSession();
-            return;
-        }
-
-        if (auth.github) {
-            console.info("Firebase: Signing-in with Github...");
-            const provider = new firebase.auth.GithubAuthProvider();
-
-            if (auth.github.scopes) {
-                auth.github.scopes.forEach(scope => {
-                    provider.addScope(scope);
-                });
-            }
-
-            const redirectResult = await firebase.auth().getRedirectResult();
-
-            if (!redirectResult.credential) {
-                await this.firebaseApp.auth().signInWithRedirect(provider);
-                return;
-            }
-            return;
-        }
-
-        if (auth.google) {
-            console.info("Firebase: Signing-in with Google...");
-            const provider = new firebase.auth.GoogleAuthProvider();
-
-            if (auth.google.scopes) {
-                auth.google.scopes.forEach(scope => {
-                    provider.addScope(scope);
-                });
-            }
-
-            const redirectResult = await firebase.auth().getRedirectResult();
-
-            if (!redirectResult.credential) {
-                await this.firebaseApp.auth().signInWithRedirect(provider);
-                return;
-            }
-            return;
-        }
-
-        if (auth.basic) {
-            console.info("Firebase: Signing-in with email and password...");
-            await this.firebaseApp.auth().signInWithEmailAndPassword(auth.basic.email, auth.basic.password);
-            return;
-        }
-
-        if (auth.custom) {
-            console.info("Firebase: Signing-in with custom access token...");
-            const customAccessToken = await this.customFirebaseAuthService.acquireFirebaseCustomAccessToken();
-
-            await this.firebaseApp.auth()
-                .signInWithCustomToken(customAccessToken.access_token)
-                .catch((error) => {
-                    console.error(error);
-                });
-
-            return;
-        }
+    private async trySignIn(): Promise<void> {
+        await this.firebaseAuthService.authenticate(this.firebaseApp);
     }
 
-    private async authenticate(auth: FirebaseAuth): Promise<void> {
+    private async authenticate(): Promise<void> {
         if (this.authenticationPromise) {
             return this.authenticationPromise;
         }
@@ -137,7 +44,7 @@ export class FirebaseService {
             firebase.auth(this.firebaseApp).onAuthStateChanged(async (user: firebase.User) => {
                 if (user) {
                     this.authenticatedUser = user;
-                    const userId = user.displayName || user.email || user.isAnonymous ? "Anonymous" : "Custom";
+                    const userId = user.displayName || user.email || (user.isAnonymous ? "Anonymous" : "Custom");
 
                     this.logger.trackEvent("Startup", { message: `Logged in as ${userId}.` });
                     await this.logger.trackSession({ userId: userId });
@@ -146,7 +53,7 @@ export class FirebaseService {
                     return;
                 }
 
-                await this.trySignIn(auth);
+                await this.trySignIn();
                 resolve();
             });
         });
@@ -164,7 +71,7 @@ export class FirebaseService {
             this.databaseRootKey = firebaseSettings.databaseRootKey || "/";
 
             await this.applyConfiguration(firebaseSettings);
-            await this.authenticate(firebaseSettings.auth);
+            await this.authenticate();
 
             resolve(this.firebaseApp);
         });

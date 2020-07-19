@@ -1,7 +1,6 @@
 import * as admin from "firebase-admin";
 import { ISettingsProvider } from "@paperbits/common/configuration";
-import { CustomCredentialProvider } from "./customCredentialProvider";
-import { FirebaseAuth } from "./firebaseService";
+import { FirebaseCredentialProvider } from "./firebaseCredentialProvider";
 
 
 export class FirebaseService {
@@ -11,15 +10,13 @@ export class FirebaseService {
 
     constructor(
         private readonly settingsProvider: ISettingsProvider,
-        private readonly customCredentialsProvider: CustomCredentialProvider) { }
+        private readonly firebaseCredentialProvider: FirebaseCredentialProvider) { }
 
     private async applyConfiguration(firebaseSettings: Object): Promise<any> {
         this.databaseRootKey = firebaseSettings["databaseRootKey"];
         this.storageBasePath = firebaseSettings["storageBasePath"];
 
-        const auth: FirebaseAuth = firebaseSettings["auth"];
-
-        const credential = auth.custom === true ? this.customCredentialsProvider :  admin.credential.cert(auth.serviceAccount)
+        const credential = await this.firebaseCredentialProvider.getCredential();
 
         admin.initializeApp({
             credential,
