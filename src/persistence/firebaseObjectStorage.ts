@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import * as Objects from "@paperbits/common/objects";
-import { IObjectStorage, Query, Operator, OrderDirection } from "@paperbits/common/persistence";
+import { IObjectStorage, Query, Operator, OrderDirection, Page } from "@paperbits/common/persistence";
 import { Bag } from "@paperbits/common/bag";
 import { FirebaseService } from "../services/firebaseService";
 
@@ -164,8 +164,8 @@ export class FirebaseObjectStorage implements IObjectStorage {
         }
     }
 
-    public async searchObjects<T>(path: string, query: Query<T>): Promise<T> {
-        const searchResultObject: any = {};
+    public async searchObjects<T>(path: string, query: Query<T>): Promise<Page<T>> {
+        const searchResultObject: T[] = [];
 
         try {
             let snapshot: firebase.database.DataSnapshot;
@@ -208,7 +208,11 @@ export class FirebaseObjectStorage implements IObjectStorage {
             Objects.mergeDeepAt(path, searchResultObject, data);
 
             const resultObject = Objects.getObjectAt(path, searchResultObject);
-            return <T>(resultObject || {});
+            // return Object.values(resultObject) || []);
+
+            debugger;
+
+            return null;
         }
         catch (error) {
             throw new Error(`Could not search object '${path}'. ${error.stack || error.message}.`);
@@ -241,5 +245,36 @@ export class FirebaseObjectStorage implements IObjectStorage {
         });
 
         await Promise.all(saveTasks);
+    }
+}
+
+class FirebasePage<T> implements Page<T> {
+    constructor(
+        public readonly value: T[],
+        private readonly query: firebase.database.Query,
+        private readonly skip: number,
+        private readonly take: number
+    ) {
+        if (skip + take > this.collection.length) {
+            this.takeNext = null;
+        }
+    }
+
+    public async takePrev?(numberOfRecords: number): Promise<Page<T>> {
+        throw new Error("Not implemented");
+    }
+
+    public async takeNext?(numberOfRecords: number = pageSize): Promise<Page<T>> {
+        this.query.startAt("")
+
+
+        const value = this.collection.slice(this.skip, this.skip + numberOfRecords);
+        const skipNext = this.skip + numberOfRecords;
+        const takeNext = numberOfRecords || this.take;
+
+        const nextPage = new FirebasePage<T>(value, this.collection, skipNext, takeNext);
+
+
+        return nextPage;
     }
 }
