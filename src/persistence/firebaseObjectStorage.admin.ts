@@ -1,8 +1,9 @@
 import * as _ from "lodash";
 import * as Objects from "@paperbits/common/objects";
-import { IObjectStorage, Query, Operator } from "@paperbits/common/persistence";
+import { IObjectStorage, Query, Operator, Page, OrderDirection } from "@paperbits/common/persistence";
 import { FirebaseService } from "../services/firebaseService.admin";
-
+import { FirebaseCollectionPage } from "./firebaseCollectionPage";
+import { collectionPageSize } from "./contants";
 
 export class FirebaseObjectStorage implements IObjectStorage {
     constructor(private readonly firebaseService: FirebaseService) { }
@@ -55,46 +56,87 @@ export class FirebaseObjectStorage implements IObjectStorage {
         }
     }
 
-    public async searchObjects<T>(path: string, query: Query<T>): Promise<T> {
-        const searchResultObject: any = {};
-
+    public async searchObjects<T>(path: string, query: Query<T>): Promise<Page<T>> {
         try {
             const databaseRef = await this.firebaseService.getDatabaseRef();
             const pathRef = databaseRef.child(path);
+            const snapshot = await pathRef.once("value");
+            const searchObj = snapshot.val();
+            
+            let collection: any[] = Object.values(searchObj);
 
-            if (query && query.filters.length > 0) {
-                if (query.filters.length > 1) {
-                    console.warn("Firebase Realtime Database doesn't support filtering by more than 1 property.");
+            if (query) {
+                if (query.filters.length > 0) {
+                    collection = collection.filter(x => {
+                        let meetsCriteria = true;
+
+                        for (const filter of query.filters) {
+                            let left = Objects.getObjectAt<any>(filter.left, x);
+                            let right = filter.right;
+
+                            if (left === undefined) {
+                                meetsCriteria = false;
+                                continue;
+                            }
+
+                            if (typeof left === "string") {
+                                left = left.toUpperCase();
+                            }
+
+                            if (typeof right === "string") {
+                                right = right.toUpperCase();
+                            }
+
+                            const operator = filter.operator;
+
+                            switch (operator) {
+                                case Operator.contains:
+                                    if (left && !left.includes(right)) {
+                                        meetsCriteria = false;
+                                    }
+                                    break;
+
+                                case Operator.equals:
+                                    if (left !== right) {
+                                        meetsCriteria = false;
+                                    }
+                                    break;
+
+                                default:
+                                    throw new Error("Cannot translate operator into Firebase Realtime Database query.");
+                            }
+                        }
+
+                        return meetsCriteria;
+                    });
                 }
 
-                const filter = query.filters[0];
-                let firebaseQuery = pathRef.orderByChild(filter.left);
+                if (query.orderingBy) {
+                    const property = query.orderingBy;
 
-                switch (filter.operator) {
-                    case Operator.contains:
-                        firebaseQuery = firebaseQuery.startAt(filter.right);
-                        break;
-                    case Operator.equals:
-                        firebaseQuery = firebaseQuery.equalTo(filter.right);
-                        break;
+                    collection = collection.sort((x, y) => {
+                        const a = Objects.getObjectAt<any>(property, x);
+                        const b = Objects.getObjectAt<any>(property, y);
+                        const modifier = query.orderDirection === OrderDirection.accending ? 1 : -1;
 
-                    default:
-                        throw new Error("Cannot translate operator into Firebase Realtime Database query.");
+                        if (a > b) {
+                            return modifier;
+                        }
+
+                        if (a < b) {
+                            return -modifier;
+                        }
+
+                        return 0;
+                    });
                 }
-
-                const searchResultObject = await firebaseQuery.once("value");
-                return searchResultObject.val();
-
-                Objects.mergeDeepAt(path, searchResultObject, searchResultObject);
-            }
-            else {
-                const objectData = await pathRef.once("value");
-                Objects.mergeDeepAt(path, searchResultObject, objectData.val());
             }
 
-            const resultObject = Objects.getObjectAt(path, searchResultObject);
+            const skip = 0;
+            const take = collectionPageSize;
+            const value = collection.slice(skip, skip + take);
 
-            return <T>(resultObject || {});
+            return new FirebaseCollectionPage(value, collection, skip, take);
         }
         catch (error) {
             throw new Error(`Could not search object '${path}'. ${error.stack || error.message}.`);
