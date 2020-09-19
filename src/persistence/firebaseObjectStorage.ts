@@ -4,6 +4,7 @@ import { IObjectStorage, Query, Operator, OrderDirection, Page } from "@paperbit
 import { Bag } from "@paperbits/common/bag";
 import { FirebaseService } from "../services/firebaseService";
 
+const pageSize = 7;
 
 export class FirebaseObjectStorage implements IObjectStorage {
     constructor(private readonly firebaseService: FirebaseService) { }
@@ -165,54 +166,86 @@ export class FirebaseObjectStorage implements IObjectStorage {
     }
 
     public async searchObjects<T>(path: string, query: Query<T>): Promise<Page<T>> {
-        const searchResultObject: T[] = [];
-
         try {
-            let snapshot: firebase.database.DataSnapshot;
             const databaseRef = await this.firebaseService.getDatabaseRef();
             const pathRef = databaseRef.child(path);
+            const snapshot = await pathRef.once("value");
+            const searchObj = snapshot.val();
+            
+            let collection: any[] = Object.values(searchObj);
 
-            if (query && query.filters.length > 0) {
-                if (query.filters.length > 1) {
-                    console.warn("Firebase Realtime Database doesn't support filtering by more than 1 property.");
+            if (query) {
+                if (query.filters.length > 0) {
+                    collection = collection.filter(x => {
+                        let meetsCriteria = true;
+
+                        for (const filter of query.filters) {
+                            let left = Objects.getObjectAt<any>(filter.left, x);
+                            let right = filter.right;
+
+                            if (left === undefined) {
+                                meetsCriteria = false;
+                                continue;
+                            }
+
+                            if (typeof left === "string") {
+                                left = left.toUpperCase();
+                            }
+
+                            if (typeof right === "string") {
+                                right = right.toUpperCase();
+                            }
+
+                            const operator = filter.operator;
+
+                            switch (operator) {
+                                case Operator.contains:
+                                    if (left && !left.includes(right)) {
+                                        meetsCriteria = false;
+                                    }
+                                    break;
+
+                                case Operator.equals:
+                                    if (left !== right) {
+                                        meetsCriteria = false;
+                                    }
+                                    break;
+
+                                default:
+                                    throw new Error("Cannot translate operator into Firebase Realtime Database query.");
+                            }
+                        }
+
+                        return meetsCriteria;
+                    });
                 }
 
-                const filter = query.filters[0];
-                let firebaseQuery = pathRef.orderByChild(filter.left);
+                if (query.orderingBy) {
+                    const property = query.orderingBy;
 
-                switch (filter.operator) {
-                    case Operator.contains:
-                        firebaseQuery = firebaseQuery.startAt(filter.right);
-                        break;
-                    case Operator.equals:
-                        firebaseQuery = firebaseQuery.equalTo(filter.right);
-                        break;
+                    collection = collection.sort((x, y) => {
+                        const a = Objects.getObjectAt<any>(property, x);
+                        const b = Objects.getObjectAt<any>(property, y);
+                        const modifier = query.orderDirection === OrderDirection.accending ? 1 : -1;
 
-                    default:
-                        throw new Error("Cannot translate operator into Firebase Realtime Database query.");
+                        if (a > b) {
+                            return modifier;
+                        }
+
+                        if (a < b) {
+                            return -modifier;
+                        }
+
+                        return 0;
+                    });
                 }
-                snapshot = await firebaseQuery.once("value");
-            }
-            else {
-                snapshot = await pathRef.once("value");
             }
 
-            let data = snapshot.val();
+            const skip = 0;
+            const take = pageSize;
+            const value = collection.slice(skip, skip + take);
 
-            // Query search optimization: Firebase search only by 1 filter, apply other filters.
-            if (data && query && query.filters.length > 1) {
-                query.filters = query.filters.slice(1);
-                data = this.searchInResult<Bag<T>>(data, query);
-            }
-
-            Objects.mergeDeepAt(path, searchResultObject, data);
-
-            const resultObject = Objects.getObjectAt(path, searchResultObject);
-            // return Object.values(resultObject) || []);
-
-            debugger;
-
-            return null;
+            return new StaticPage(value, collection, skip, take);
         }
         catch (error) {
             throw new Error(`Could not search object '${path}'. ${error.stack || error.message}.`);
@@ -248,10 +281,10 @@ export class FirebaseObjectStorage implements IObjectStorage {
     }
 }
 
-class FirebasePage<T> implements Page<T> {
+class StaticPage<T> implements Page<T> {
     constructor(
         public readonly value: T[],
-        private readonly query: firebase.database.Query,
+        private readonly collection: any,
         private readonly skip: number,
         private readonly take: number
     ) {
@@ -260,19 +293,16 @@ class FirebasePage<T> implements Page<T> {
         }
     }
 
-    public async takePrev?(numberOfRecords: number): Promise<Page<T>> {
+    public async takePrev?(): Promise<Page<T>> {
         throw new Error("Not implemented");
     }
 
-    public async takeNext?(numberOfRecords: number = pageSize): Promise<Page<T>> {
-        this.query.startAt("")
+    public async takeNext?(): Promise<Page<T>> {
+        const value = this.collection.slice(this.skip, this.skip + pageSize);
+        const skipNext = this.skip + pageSize;
+        const takeNext = pageSize || this.take;
 
-
-        const value = this.collection.slice(this.skip, this.skip + numberOfRecords);
-        const skipNext = this.skip + numberOfRecords;
-        const takeNext = numberOfRecords || this.take;
-
-        const nextPage = new FirebasePage<T>(value, this.collection, skipNext, takeNext);
+        const nextPage = new StaticPage<T>(value, this.collection, skipNext, takeNext);
 
 
         return nextPage;
