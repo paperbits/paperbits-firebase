@@ -1,8 +1,9 @@
 import * as _ from "lodash";
 import * as Objects from "@paperbits/common/objects";
-import { IObjectStorage, Query, Operator, OrderDirection } from "@paperbits/common/persistence";
-import { Bag } from "@paperbits/common/bag";
+import { IObjectStorage, Query, Operator, OrderDirection, Page } from "@paperbits/common/persistence";
 import { FirebaseService } from "../services/firebaseService";
+import { FirebaseCollectionPage } from "./firebaseCollectionPage";
+import { pageSize } from "./contants";
 
 
 export class FirebaseObjectStorage implements IObjectStorage {
@@ -21,95 +22,6 @@ export class FirebaseObjectStorage implements IObjectStorage {
                 }
             });
         }
-    }
-
-    private searchInResult<T>(searchObj: unknown, query?: Query<T>): Bag<T> {
-        const searchResultObject: Bag<T> = {};
-        let collection = Object.values(searchObj);
-
-        if (query) {
-            if (query.filters.length > 0) {
-                collection = collection.filter(x => {
-                    let meetsCriteria = true;
-
-                    for (const filter of query.filters) {
-                        const property = x[filter.left];
-
-                        if (typeof filter.right === "boolean") {
-                            if (filter.operator !== Operator.equals) {
-                                console.warn("Boolean query operator can be only equals");
-                                meetsCriteria = false;
-                                return;
-                            }
-
-                            if (((property === undefined || property === false) && filter.right === true) ||
-                                ((filter.right === undefined || filter.right === false) && property === true)) {
-                                meetsCriteria = false;
-                            }
-                            continue;
-                        }
-
-                        if (!property) {
-                            meetsCriteria = false;
-                            continue;
-                        }
-
-                        const left = x[filter.left].toUpperCase();
-                        const right = filter.right.toUpperCase();
-                        const operator = filter.operator;
-
-                        switch (operator) {
-                            case Operator.contains:
-                                if (!left.includes(right)) {
-                                    meetsCriteria = false;
-                                }
-                                break;
-
-                            case Operator.equals:
-                                if (left !== right) {
-                                    meetsCriteria = false;
-                                }
-                                break;
-
-                            default:
-                                throw new Error("Cannot translate operator into Firebase Realtime Database query.");
-                        }
-                    }
-
-                    return meetsCriteria;
-                });
-            }
-
-            if (query.orderingBy) {
-                const property = query.orderingBy;
-
-                collection = collection.sort((x, y) => {
-                    const a = x[property].toUpperCase();
-                    const b = y[property].toUpperCase();
-                    const modifier = query.orderDirection === OrderDirection.accending ? 1 : -1;
-
-                    if (a > b) {
-                        return modifier;
-                    }
-
-                    if (a < b) {
-                        return -modifier;
-                    }
-
-                    return 0;
-                });
-            }
-        }
-
-        collection.forEach(item => {
-            const segments = item.key.split("/");
-            const key = segments[1];
-
-            Objects.setValue(key, searchResultObject, item);
-            Objects.cleanupObject(item); // Ensure all "undefined" are cleaned up
-        });
-
-        return searchResultObject;
     }
 
     public async addObject<T>(path: string, dataObject: T): Promise<void> {
@@ -164,51 +76,89 @@ export class FirebaseObjectStorage implements IObjectStorage {
         }
     }
 
-    public async searchObjects<T>(path: string, query: Query<T>): Promise<T> {
-        const searchResultObject: any = {};
-
+    public async searchObjects<T>(path: string, query: Query<T>): Promise<Page<T>> {
         try {
-            let snapshot: firebase.database.DataSnapshot;
             const databaseRef = await this.firebaseService.getDatabaseRef();
             const pathRef = databaseRef.child(path);
+            const snapshot = await pathRef.once("value");
+            const searchObj = snapshot.val();
 
-            if (query && query.filters.length > 0) {
-                if (query.filters.length > 1) {
-                    console.warn("Firebase Realtime Database doesn't support filtering by more than 1 property.");
+            if (!searchObj) {
+                return { value: [] };
+            }
+
+            let collection: any[] = Object.values(searchObj);
+
+            if (query) {
+                if (query.filters.length > 0) {
+                    collection = collection.filter(x => {
+                        let meetsCriteria = true;
+
+                        for (const filter of query.filters) {
+                            let left = Objects.getObjectAt<any>(filter.left, x);
+                            let right = filter.right;
+
+                            if (left === undefined) {
+                                meetsCriteria = false;
+                                continue;
+                            }
+
+                            if (typeof left === "string") {
+                                left = left.toUpperCase();
+                            }
+
+                            if (typeof right === "string") {
+                                right = right.toUpperCase();
+                            }
+
+                            const operator = filter.operator;
+
+                            switch (operator) {
+                                case Operator.contains:
+                                    if (left && !left.includes(right)) {
+                                        meetsCriteria = false;
+                                    }
+                                    break;
+
+                                case Operator.equals:
+                                    if (left !== right) {
+                                        meetsCriteria = false;
+                                    }
+                                    break;
+
+                                default:
+                                    throw new Error("Cannot translate operator into Firebase Realtime Database query.");
+                            }
+                        }
+
+                        return meetsCriteria;
+                    });
                 }
 
-                const filter = query.filters[0];
-                let firebaseQuery = pathRef.orderByChild(filter.left);
+                if (query.orderingBy) {
+                    const property = query.orderingBy;
 
-                switch (filter.operator) {
-                    case Operator.contains:
-                        firebaseQuery = firebaseQuery.startAt(filter.right);
-                        break;
-                    case Operator.equals:
-                        firebaseQuery = firebaseQuery.equalTo(filter.right);
-                        break;
+                    collection = collection.sort((x, y) => {
+                        const a = Objects.getObjectAt<any>(property, x);
+                        const b = Objects.getObjectAt<any>(property, y);
+                        const modifier = query.orderDirection === OrderDirection.accending ? 1 : -1;
 
-                    default:
-                        throw new Error("Cannot translate operator into Firebase Realtime Database query.");
+                        if (a > b) {
+                            return modifier;
+                        }
+
+                        if (a < b) {
+                            return -modifier;
+                        }
+
+                        return 0;
+                    });
                 }
-                snapshot = await firebaseQuery.once("value");
-            }
-            else {
-                snapshot = await pathRef.once("value");
             }
 
-            let data = snapshot.val();
+            const value = collection.slice(0, pageSize);
 
-            // Query search optimization: Firebase search only by 1 filter, apply other filters.
-            if (data && query && query.filters.length > 1) {
-                query.filters = query.filters.slice(1);
-                data = this.searchInResult<Bag<T>>(data, query);
-            }
-
-            Objects.mergeDeepAt(path, searchResultObject, data);
-
-            const resultObject = Objects.getObjectAt(path, searchResultObject);
-            return <T>(resultObject || {});
+            return new FirebaseCollectionPage(value, collection, pageSize);
         }
         catch (error) {
             throw new Error(`Could not search object '${path}'. ${error.stack || error.message}.`);
@@ -243,3 +193,4 @@ export class FirebaseObjectStorage implements IObjectStorage {
         await Promise.all(saveTasks);
     }
 }
+
