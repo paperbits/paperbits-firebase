@@ -3,7 +3,7 @@ import * as Objects from "@paperbits/common/objects";
 import { IObjectStorage, Query, Operator, OrderDirection, Page } from "@paperbits/common/persistence";
 import { FirebaseService } from "../services/firebaseService";
 import { FirebaseCollectionPage } from "./firebaseCollectionPage";
-import { collectionPageSize } from "./contants";
+import { pageSize } from "./contants";
 
 
 export class FirebaseObjectStorage implements IObjectStorage {
@@ -82,7 +82,11 @@ export class FirebaseObjectStorage implements IObjectStorage {
             const pathRef = databaseRef.child(path);
             const snapshot = await pathRef.once("value");
             const searchObj = snapshot.val();
-            
+
+            if (!searchObj) {
+                return { value: [] };
+            }
+
             let collection: any[] = Object.values(searchObj);
 
             if (query) {
@@ -152,11 +156,9 @@ export class FirebaseObjectStorage implements IObjectStorage {
                 }
             }
 
-            const skip = 0;
-            const take = collectionPageSize;
-            const value = collection.slice(skip, skip + take);
+            const value = collection.slice(0, pageSize);
 
-            return new FirebaseCollectionPage(value, collection, skip, take);
+            return new FirebaseCollectionPage(value, collection, pageSize);
         }
         catch (error) {
             throw new Error(`Could not search object '${path}'. ${error.stack || error.message}.`);

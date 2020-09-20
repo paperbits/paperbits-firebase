@@ -1,14 +1,13 @@
 import { Page } from "@paperbits/common/persistence";
-import { collectionPageSize } from "./contants";
+import { pageSize } from "./contants";
 
 export class FirebaseCollectionPage<T> implements Page<T> {
     constructor(
         public readonly value: T[],
         private readonly collection: any,
-        private readonly skip: number,
-        private readonly take: number
+        private readonly skip: number
     ) {
-        if (skip + take > this.collection.length) {
+        if (skip > this.collection.length) {
             this.takeNext = null;
         }
     }
@@ -18,12 +17,9 @@ export class FirebaseCollectionPage<T> implements Page<T> {
     }
 
     public async takeNext?(): Promise<Page<T>> {
-        const value = this.collection.slice(this.skip, this.skip + collectionPageSize);
-        const skipNext = this.skip + collectionPageSize;
-        const takeNext = collectionPageSize || this.take;
-
-        const nextPage = new FirebaseCollectionPage<T>(value, this.collection, skipNext, takeNext);
-
+        const value = this.collection.slice(this.skip, this.skip + pageSize);
+        const skipNext = this.skip + pageSize;
+        const nextPage = new FirebaseCollectionPage<T>(value, this.collection, skipNext);
 
         return nextPage;
     }

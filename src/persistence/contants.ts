@@ -1,1 +1,1 @@
-export const collectionPageSize = 20;
+export const pageSize = 20;
