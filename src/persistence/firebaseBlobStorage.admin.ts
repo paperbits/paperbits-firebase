@@ -1,9 +1,13 @@
+import { HttpClient } from "@paperbits/common/http";
 import { IBlobStorage } from "@paperbits/common/persistence";
 import { FirebaseService } from "../services/firebaseService.admin";
-
+import * as Utils from "@paperbits/common/utils";
 
 export class FirebaseBlobStorage implements IBlobStorage {
-    constructor(private readonly firebaseService: FirebaseService) { }
+    constructor(
+        private readonly firebaseService: FirebaseService,
+        private readonly httpClient: HttpClient
+    ) { }
 
     public async uploadBlob(name: string, content: Uint8Array, contentType?: string): Promise<void> {
         return new Promise<void>(async (resolve, reject) => {
@@ -18,16 +22,37 @@ export class FirebaseBlobStorage implements IBlobStorage {
     }
 
     public async downloadBlob?(blobKey: string): Promise<Uint8Array> {
-        // TODO: Enable proper download
-        // const storageRef = await this.firebaseService.getStorageRef();
-        // const file = storageRef.file(blobKey);
+        const downloadUrl = await this.getDownloadUrl(blobKey);
+
+        if (!downloadUrl) {
+            return null;
+        }
+
+        const response = await this.httpClient.send({ url: downloadUrl });
+
+        if (response?.statusCode === 200) {
+            return response.toByteArray();
+        }
 
         return null;
     }
 
     public async getDownloadUrl(blobKey: string): Promise<string> {
         const storageRef = await this.firebaseService.getStorageRef();
-        const file = storageRef.file(`${this.firebaseService.storageBasePath}/${blobKey}`);
+
+        let key = this.firebaseService.storageBasePath;
+
+        if (key.endsWith("/")) {
+            key = key.slice(0, key.length - 1);
+        }
+
+        key += Utils.ensureLeadingSlash(blobKey);
+
+        if (key.startsWith("/")) {
+            key = key.substring(1);
+        }
+
+        const file = storageRef.file(key);
         const downloadUrls = await file.getSignedUrl({ action: "read", expires: "01-01-2100" });
 
         if (downloadUrls.length > 0) {
