@@ -1,13 +1,13 @@
+import { HttpClient } from "@paperbits/common/http";
 import { IBlobStorage } from "@paperbits/common/persistence";
 import { FirebaseService } from "../services/firebaseService";
 
 
 export class FirebaseBlobStorage implements IBlobStorage {
-    private readonly firebaseService: FirebaseService;
-
-    constructor(firebaseService: FirebaseService) {
-        this.firebaseService = firebaseService;
-    }
+    constructor(
+        private readonly firebaseService: FirebaseService,
+        private readonly httpClient: HttpClient
+    ) { }
 
     public uploadBlob(name: string, content: Uint8Array, contentType?: string): Promise<void> {
         return new Promise<void>(async (resolve, reject) => {
@@ -25,6 +25,22 @@ export class FirebaseBlobStorage implements IBlobStorage {
                 },
                 resolve);
         });
+    }
+
+    public async downloadBlob(blobKey: string): Promise<Uint8Array> {
+        const downloadUrl = await this.getDownloadUrl(blobKey);
+
+        if (!downloadUrl) {
+            return null;
+        }
+
+        const response = await this.httpClient.send({ url: downloadUrl });
+
+        if (response?.statusCode === 200) {
+            return response.toByteArray();
+        }
+
+        return null;
     }
 
     public async getDownloadUrl(blobKey: string): Promise<string> {
