@@ -61,16 +61,12 @@ export class FirebaseService {
         const appName = firebaseSettings.databaseRootKey;
         this.firebaseApp = firebase.initializeApp(firebaseSettings, appName); // This can be called only once
 
-        console.log("AAA");
-
         await this.authenticate();
 
         return this.firebaseApp;
     }
 
     public async getFirebaseRef(): Promise<firebase.app.App> {
-        console.log("AAA");
-        
         if (this.initializationPromise) {
             return this.initializationPromise;
         }
