@@ -6,7 +6,7 @@ import { FirebaseCredentialProvider } from "./firebaseCredentialProvider";
 export class FirebaseService {
     public databaseRootKey: string;
     public storageBasePath: string;
-    private initializationPromise: Promise<any>;
+    private initializePromise: Promise<any>;
 
     constructor(
         private readonly settingsProvider: ISettingsProvider,
@@ -40,20 +40,18 @@ export class FirebaseService {
         return bucket;
     }
 
+    private async loadSettings(): Promise<void> {
+        const firebaseSettings = await this.settingsProvider.getSetting<any>("firebase");
+        this.databaseRootKey = this.databaseRootKey = firebaseSettings.rootKey || "/";
+
+        await this.applyConfiguration(firebaseSettings);
+    }
+
     private async getFirebaseRef(): Promise<void> {
-        if (this.initializationPromise) {
-            return this.initializationPromise;
+        if (!this.initializePromise) {
+            this.initializePromise = this.loadSettings();
         }
 
-        this.initializationPromise = new Promise(async (resolve, reject) => {
-            const firebaseSettings = await this.settingsProvider.getSetting<any>("firebase");
-            this.databaseRootKey = this.databaseRootKey = firebaseSettings.rootKey || "/";
-
-            await this.applyConfiguration(firebaseSettings);
-
-            resolve();
-        });
-
-        return this.initializationPromise;
+        return this.initializePromise;
     }
 }

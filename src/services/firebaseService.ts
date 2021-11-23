@@ -23,14 +23,6 @@ export class FirebaseService {
         private readonly logger: Logger) {
     }
 
-    private async applyConfiguration(firebaseSettings: FirebaseSettings): Promise<void> {
-        this.databaseRootKey = firebaseSettings.databaseRootKey;
-        this.storageBasePath = firebaseSettings.storageBasePath;
-
-        const appName = firebaseSettings.databaseRootKey;
-        this.firebaseApp = firebase.initializeApp(firebaseSettings, appName); // This can be called only once
-    }
-
     private async trySignIn(): Promise<void> {
         await this.firebaseAuthService.authenticate(this.firebaseApp);
     }
@@ -61,20 +53,29 @@ export class FirebaseService {
         return this.authenticationPromise;
     }
 
+    private async applyConfiguration(): Promise<firebase.app.App> {
+        const firebaseSettings = await this.settingsProvider.getSetting<FirebaseSettings>("firebase");
+        this.databaseRootKey = firebaseSettings.databaseRootKey || "/";
+        this.storageBasePath = firebaseSettings.storageBasePath;
+
+        const appName = firebaseSettings.databaseRootKey;
+        this.firebaseApp = firebase.initializeApp(firebaseSettings, appName); // This can be called only once
+
+        console.log("AAA");
+
+        await this.authenticate();
+
+        return this.firebaseApp;
+    }
+
     public async getFirebaseRef(): Promise<firebase.app.App> {
+        console.log("AAA");
+        
         if (this.initializationPromise) {
             return this.initializationPromise;
         }
 
-        this.initializationPromise = new Promise(async (resolve, reject) => {
-            const firebaseSettings = await this.settingsProvider.getSetting<FirebaseSettings>("firebase");
-            this.databaseRootKey = firebaseSettings.databaseRootKey || "/";
-
-            await this.applyConfiguration(firebaseSettings);
-            await this.authenticate();
-
-            resolve(this.firebaseApp);
-        });
+        this.initializationPromise = this.applyConfiguration();
 
         return this.initializationPromise;
     }
