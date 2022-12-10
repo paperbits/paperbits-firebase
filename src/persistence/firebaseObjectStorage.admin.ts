@@ -1,4 +1,3 @@
-import * as _ from "lodash";
 import * as Objects from "@paperbits/common/objects";
 import { IObjectStorage, Query, Operator, Page, OrderDirection } from "@paperbits/common/persistence";
 import { FirebaseService } from "../services/firebaseService.admin";
